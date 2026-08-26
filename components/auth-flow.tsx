@@ -1,6 +1,7 @@
 "use client";
 
 import { type ClipboardEvent, type FormEvent, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { getMockEkycProfile } from "@/lib/mock-ekyc";
@@ -185,6 +186,10 @@ export function AuthFlow({ mode }: { mode: Mode }) {
           </form>
         )}
         {message && <p className="auth-message" role="status">{message}</p>}
+        <p className="auth-switch">
+          {isSignup ? "Already have an account? " : "New to EPFO Reimagined? "}
+          <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create an account"}</Link>
+        </p>
         <p className="auth-note">Simulated UIDAI flow — production requires AUA/KUA licensing or DigiLocker eKYC.</p>
       </section>
     </main>

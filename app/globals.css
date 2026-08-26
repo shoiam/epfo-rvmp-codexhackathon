@@ -59,4 +59,6 @@ summary::-webkit-details-marker { display: none; }
 .auth-actions { display: grid; gap: 0.75rem; }
 .auth-link-button { border: 0; background: transparent; color: hsl(var(--primary)); padding: 0.25rem; font: inherit; font-size: 0.875rem; text-decoration: underline; cursor: pointer; }
 .auth-message { margin: 1rem 0 0; color: hsl(var(--foreground)); font-size: 0.875rem; }
+.auth-switch { margin: 1rem 0 0; color: hsl(var(--muted-foreground)); font-size: 0.875rem; }
+.auth-switch a { color: hsl(var(--primary)); font-weight: 600; }
 .auth-note { margin: 1.5rem 0 0; border-top: 1px solid hsl(var(--border)); padding-top: 1rem; color: hsl(var(--muted-foreground)); font-size: 0.75rem; line-height: 1.5; }
