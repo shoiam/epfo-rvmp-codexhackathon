@@ -1,7 +1,7 @@
 import { MembershipStatus, PrismaClient } from "@prisma/client";
 
 import { canEscalateClaimStage } from "../lib/claim-stage-status";
-import { getEffectiveMembershipStatus } from "../lib/membership-status";
+import { getEffectiveStatus } from "../lib/membership-status";
 
 const prisma = new PrismaClient();
 
@@ -237,7 +237,7 @@ async function main() {
       .filter((contribution) => contribution.depositedAt === null)
       .map((contribution) => formatMonth(contribution.month))
       .join(", ") || "None";
-    const effectiveStatus = getEffectiveMembershipStatus(membership);
+    const effectiveStatus = getEffectiveStatus(membership);
 
     return {
       establishment: membership.establishment.name,

@@ -9,7 +9,7 @@ type MembershipForStatus = {
 const EXIT_RESPONSE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
 
 /** Returns the status visible to a member without writing time-driven changes. */
-export function getEffectiveMembershipStatus(
+export function getEffectiveStatus(
   membership: MembershipForStatus,
   now = new Date(),
 ): MembershipStatus {

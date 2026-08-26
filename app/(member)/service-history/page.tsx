@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { redirect } from "next/navigation";
 
 export default function ServiceHistoryPage() {
-  return <PlaceholderPage title="Service History" description="Your employment memberships, joining and exit details, and confirmation status will appear here." />;
+  redirect("/dashboard/service-history");
 }
