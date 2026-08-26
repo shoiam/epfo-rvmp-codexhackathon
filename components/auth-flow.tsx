@@ -10,6 +10,11 @@ type Mode = "login" | "signup";
 
 const OTP = "123456";
 
+async function readApiMessage(response: Response, fallback: string) {
+  const result = await response.json().catch(() => null) as { message?: string } | null;
+  return result?.message ?? fallback;
+}
+
 function OtpBoxes({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -96,9 +101,8 @@ export function AuthFlow({ mode }: { mode: Mode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aadhaar: normaliseAadhaar(aadhaar), otp }),
     });
-    const result = await response.json() as { message?: string };
     if (!response.ok) {
-      setMessage(result.message ?? "We could not sign you in.");
+      setMessage(await readApiMessage(response, "We could not sign you in. Please try again."));
       return;
     }
     router.replace("/dashboard");
@@ -117,9 +121,8 @@ export function AuthFlow({ mode }: { mode: Mode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aadhaar: normaliseAadhaar(aadhaar), email, otp: emailOtp }),
     });
-    const result = await response.json() as { message?: string };
     if (!response.ok) {
-      setMessage(result.message ?? "We could not complete registration.");
+      setMessage(await readApiMessage(response, "We could not complete registration. Please try again."));
       return;
     }
     router.replace("/dashboard?welcome=1");
