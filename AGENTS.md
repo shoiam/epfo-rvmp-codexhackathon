@@ -12,3 +12,7 @@ Rules:
 - A reason a machine can catch pre-submission belongs in lib/preflight-rules.ts
   and must never appear in lib/return-reasons.ts.
 - Indian number formatting throughout: ₹1,50,000 — not ₹150,000.
+- All colour comes from CSS variables in globals.css. Never hardcode a hex or a
+  Tailwind colour class (bg-blue-600, text-red-500) in a component.
+- Status colours only via .status-* classes. Four states, four colours, no others.
+- Do not restyle during feature work. Visual polish happens in one final pass.

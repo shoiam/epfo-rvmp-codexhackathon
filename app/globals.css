@@ -6,8 +6,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
-
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --primary: 222 60% 22%;          /* deep navy — authority, not startup blue */
+  --primary-foreground: 0 0% 100%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 215 16% 42%;
+  --border: 214 25% 90%;
+  --radius: 0.5rem;                /* institutional, not bubbly */
+}
+.status-active   { --status: 142 55% 33%; }  /* green  */
+.status-pending  { --status: 38 92% 45%; }   /* amber  */
+.status-ended    { --status: 215 14% 55%; }  /* grey   */
+.status-missing  { --status: 0 72% 45%; }    /* red    */
 * { border-color: rgb(226 232 240); }
 
 body {

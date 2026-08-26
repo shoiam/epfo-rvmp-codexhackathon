@@ -1,9 +1,271 @@
-import { PrismaClient } from "@prisma/client";
+import { MembershipStatus, PrismaClient } from "@prisma/client";
+
+import { canEscalateClaimStage } from "../lib/claim-stage-status";
+import { getEffectiveMembershipStatus } from "../lib/membership-status";
 
 const prisma = new PrismaClient();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const EPF_RATE = 0.12;
+const EPS_RATE = 0.0833;
+const EPS_WAGE_CAP = 15_000;
+const ANNUAL_INTEREST_RATE = 0.0825;
+
+function date(year: number, month: number, day = 1) {
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function daysAgo(days: number) {
+  return new Date(Date.now() - days * DAY_MS);
+}
+
+function addMonths(start: Date, months: number) {
+  return date(start.getUTCFullYear(), start.getUTCMonth() + months + 1, 1);
+}
+
+function roundCurrency(amount: number) {
+  return Math.round(amount * 100) / 100;
+}
+
+function formatMonth(month: Date) {
+  return new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(month);
+}
+
+function formatINR(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function createCygnetContributions(membershipId: string) {
+  const start = date(2019, 7);
+  let pfBalance = 0;
+
+  return Array.from({ length: 46 }, (_, index) => {
+    const month = addMonths(start, index);
+    const wages = roundCurrency(45_000 + (23_000 * index) / 45);
+    const eeShare = roundCurrency(wages * EPF_RATE);
+    const epsShare = roundCurrency(Math.min(wages, EPS_WAGE_CAP) * EPS_RATE);
+    const erShare = roundCurrency(wages * EPF_RATE - epsShare);
+    const interestCredited = month.getUTCMonth() === 2 ? roundCurrency(pfBalance * ANNUAL_INTEREST_RATE) : 0;
+
+    pfBalance += eeShare + erShare + interestCredited;
+
+    return {
+      membershipId,
+      month,
+      wages,
+      eeShare,
+      erShare,
+      epsShare,
+      depositedAt: new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 12)),
+      interestCredited,
+    };
+  });
+}
+
+function createNorthwindContributions(membershipId: string) {
+  const start = date(2023, 6);
+  const missingDepositMonths = new Set(["2026-03-01", "2026-04-01"]);
+
+  return Array.from({ length: 38 }, (_, index) => {
+    const month = addMonths(start, index);
+    const wages = 92_000;
+    const eeShare = roundCurrency(wages * EPF_RATE);
+    const epsShare = roundCurrency(EPS_WAGE_CAP * EPS_RATE);
+    const erShare = roundCurrency(wages * EPF_RATE - epsShare);
+    const monthKey = month.toISOString().slice(0, 10);
+
+    return {
+      membershipId,
+      month,
+      wages,
+      eeShare,
+      erShare,
+      epsShare,
+      depositedAt: missingDepositMonths.has(monthKey)
+        ? null
+        : new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 12)),
+      interestCredited: 0,
+    };
+  });
+}
+
+async function clearExistingDemoData() {
+  const demoUsers = await prisma.user.findMany({
+    where: { uan: { in: ["100234567890", "100987654321"] } },
+    select: { id: true },
+  });
+  const userIds = demoUsers.map((user) => user.id);
+
+  if (userIds.length === 0) return;
+
+  await prisma.$transaction([
+    prisma.document.deleteMany({ where: { claim: { userId: { in: userIds } } } }),
+    prisma.claimStage.deleteMany({ where: { claim: { userId: { in: userIds } } } }),
+    prisma.claim.deleteMany({ where: { userId: { in: userIds } } }),
+    prisma.grievance.deleteMany({ where: { userId: { in: userIds } } }),
+    prisma.contribution.deleteMany({ where: { membership: { userId: { in: userIds } } } }),
+    prisma.membership.deleteMany({ where: { userId: { in: userIds } } }),
+    prisma.nominee.deleteMany({ where: { userId: { in: userIds } } }),
+    prisma.user.deleteMany({ where: { id: { in: userIds } } }),
+  ]);
+}
+
 async function main() {
-  // Intentionally empty: production-like member data must not be seeded by default.
+  await clearExistingDemoData();
+
+  const [cygnet, northwind, vertex] = await Promise.all([
+    prisma.establishment.upsert({
+      where: { entityId: "MHBAN0045612000" },
+      update: { name: "Cygnet Technologies Pvt Ltd", address: "Baner Road, Pune, Maharashtra", epfCode: "MHBAN0045612", city: "Pune" },
+      create: { entityId: "MHBAN0045612000", name: "Cygnet Technologies Pvt Ltd", address: "Baner Road, Pune, Maharashtra", epfCode: "MHBAN0045612", city: "Pune" },
+    }),
+    prisma.establishment.upsert({
+      where: { entityId: "KABLR0078934000" },
+      update: { name: "Northwind Systems India", address: "Outer Ring Road, Bengaluru, Karnataka", epfCode: "KABLR0078934", city: "Bengaluru" },
+      create: { entityId: "KABLR0078934000", name: "Northwind Systems India", address: "Outer Ring Road, Bengaluru, Karnataka", epfCode: "KABLR0078934", city: "Bengaluru" },
+    }),
+    prisma.establishment.upsert({
+      where: { entityId: "TNCHN0011223000" },
+      update: { name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
+      create: { entityId: "TNCHN0011223000", name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
+    }),
+  ]);
+
+  const arjun = await prisma.user.create({
+    data: {
+      uan: "100234567890",
+      aadhaarLast4: "4471",
+      name: "Arjun Rao",
+      dob: date(1994, 3, 12),
+      address: "Indiranagar, Bengaluru, Karnataka",
+      email: "arjun.rao@example.com",
+      emailVerified: new Date(),
+    },
+  });
+
+  const priya = await prisma.user.create({
+    data: {
+      uan: "100987654321",
+      aadhaarLast4: "1038",
+      name: "Priya Nambiar",
+      dob: date(1996, 9, 18),
+      address: "Kakkanad, Kochi, Kerala",
+      email: "priya.nambiar@example.com",
+      emailVerified: new Date(),
+    },
+  });
+
+  // Stored as ACTIVE: ENDOFSERVICE is derived by lib/membership-status.ts from the unanswered 11-day exit request.
+  const cygnetMembership = await prisma.membership.create({
+    data: {
+      userId: arjun.id,
+      establishmentId: cygnet.id,
+      status: MembershipStatus.ACTIVE,
+      doj: date(2019, 7),
+      doe: date(2023, 4, 30),
+      exitReason: "Employee initiated exit",
+      joinDeclaredAt: date(2019, 7),
+      joinConfirmedAt: date(2019, 7, 3),
+      exitRequestedAt: daysAgo(11),
+      exitConfirmedAt: null,
+    },
+  });
+
+  const northwindMembership = await prisma.membership.create({
+    data: {
+      userId: arjun.id,
+      establishmentId: northwind.id,
+      status: MembershipStatus.ACTIVE,
+      doj: date(2023, 6),
+      joinDeclaredAt: date(2023, 6),
+      joinConfirmedAt: date(2023, 6, 3),
+    },
+  });
+
+  await prisma.$transaction([
+    prisma.contribution.createMany({ data: createCygnetContributions(cygnetMembership.id) }),
+    prisma.contribution.createMany({ data: createNorthwindContributions(northwindMembership.id) }),
+  ]);
+
+  await prisma.claim.create({
+    data: {
+      userId: arjun.id,
+      membershipId: northwindMembership.id,
+      formType: "Form-31",
+      amount: 150_000,
+      purpose: "Medical treatment",
+      status: "UNDER_PROCESS",
+      createdAt: daysAgo(12),
+      stages: {
+        create: [
+          { seq: 1, stageName: "Submitted", enteredAt: daysAgo(12), exitedAt: daysAgo(12 - 0.1) },
+          { seq: 2, stageName: "Scrutiny", enteredAt: daysAgo(11), exitedAt: daysAgo(9) },
+          {
+            seq: 3,
+            stageName: "Verification",
+            officerName: "S. Iyer",
+            officerDesignation: "Section Supervisor",
+            office: "RO Bandra, Mumbai",
+            enteredAt: daysAgo(9),
+          },
+        ],
+      },
+    },
+  });
+
+  const arjunSummary = await prisma.user.findUniqueOrThrow({
+    where: { id: arjun.id },
+    include: {
+      memberships: {
+        include: {
+          establishment: true,
+          contributions: { orderBy: { month: "asc" } },
+          claims: { include: { stages: { orderBy: { seq: "asc" } } } },
+        },
+        orderBy: { doj: "asc" },
+      },
+      nominees: true,
+    },
+  });
+
+  const membershipRows = arjunSummary.memberships.map((membership) => {
+    const missingDepositMonths = membership.contributions
+      .filter((contribution) => contribution.depositedAt === null)
+      .map((contribution) => formatMonth(contribution.month))
+      .join(", ") || "None";
+    const effectiveStatus = getEffectiveMembershipStatus(membership);
+
+    return {
+      establishment: membership.establishment.name,
+      storedStatus: membership.status,
+      effectiveStatus,
+      contributions: membership.contributions.length,
+      missingDepositMonths,
+    };
+  });
+
+  const claimRows = arjunSummary.memberships.flatMap((membership) => membership.claims.map((claim) => {
+    const currentStage = claim.stages.find((stage) => stage.exitedAt === null);
+    const escalationUnlocked = currentStage !== undefined && canEscalateClaimStage(currentStage);
+    return {
+      form: claim.formType,
+      amount: formatINR(Number(claim.amount)),
+      purpose: claim.purpose,
+      status: claim.status,
+      currentStage: currentStage?.stageName ?? "Complete",
+      escalateUnlocked: escalationUnlocked ? "Yes" : "No",
+    };
+  }));
+
+  console.log("\nEPFO Reimagined demo seed complete\n");
+  console.table([{ user: arjunSummary.name, UAN: arjunSummary.uan, nominees: arjunSummary.nominees.length, note: "No nominee — warning state" }, { user: priya.name, UAN: priya.uan, nominees: 0, note: "Zero data — empty-state demo" }]);
+  console.log("Establishments:", [cygnet.name, northwind.name, vertex.name].join(" | "));
+  console.table(membershipRows);
+  console.table(claimRows);
 }
 
 main()
