@@ -16,3 +16,8 @@ Rules:
   Tailwind colour class (bg-blue-600, text-red-500) in a component.
 - Status colours only via .status-* classes. Four states, four colours, no others.
 - Do not restyle during feature work. Visual polish happens in one final pass.
+- NEVER read membership.status directly in a component, route handler, or query
+  filter. It is raw storage and is frequently stale by design.
+  Always go through getEffectiveStatus() in lib/membership-status.ts.
+  The seeded Cygnet membership stores ACTIVE but is truly ENDOFSERVICE — if a
+  screen shows Cygnet as ACTIVE, that is the bug.
