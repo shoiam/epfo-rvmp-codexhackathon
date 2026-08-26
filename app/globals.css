@@ -1,0 +1,20 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+* { border-color: rgb(226 232 240); }
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+summary::-webkit-details-marker { display: none; }

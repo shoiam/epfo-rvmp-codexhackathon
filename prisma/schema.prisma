@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  ENDOFSERVICE
+}
+
+model User {
+  id            String       @id @default(cuid())
+  uan           String       @unique
+  aadhaarLast4  String       @db.Char(4)
+  name          String
+  dob           DateTime     @db.Date
+  address       String
+  email         String       @unique
+  emailVerified DateTime?
+  memberships   Membership[]
+  claims        Claim[]
+  nominees      Nominee[]
+  grievances    Grievance[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Establishment {
+  id          String       @id @default(cuid())
+  entityId    String       @unique
+  name        String
+  address     String
+  epfCode     String       @unique
+  city        String
+  memberships Membership[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Membership {
+  id                String           @id @default(cuid())
+  userId            String
+  establishmentId   String
+  status            MembershipStatus @default(PENDING)
+  doj               DateTime         @db.Date
+  doe               DateTime?        @db.Date
+  exitReason        String?
+  joinDeclaredAt    DateTime?
+  joinConfirmedAt   DateTime?
+  exitRequestedAt   DateTime?
+  exitConfirmedAt   DateTime?
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  establishment     Establishment    @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  contributions     Contribution[]
+  claims            Claim[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([userId, doj])
+  @@index([establishmentId])
+}
+
+model Contribution {
+  id               String       @id @default(cuid())
+  membershipId     String
+  month            DateTime     @db.Date
+  wages            Decimal      @db.Decimal(12, 2)
+  eeShare          Decimal      @db.Decimal(12, 2)
+  erShare          Decimal      @db.Decimal(12, 2)
+  epsShare         Decimal      @db.Decimal(12, 2)
+  depositedAt      DateTime?
+  interestCredited Decimal      @default(0) @db.Decimal(12, 2)
+  membership       Membership   @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  grievances       Grievance[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([membershipId, month])
+  @@index([membershipId, month])
+}
+
+model Claim {
+  id           String       @id @default(cuid())
+  userId       String
+  membershipId String
+  formType     String
+  amount       Decimal      @db.Decimal(12, 2)
+  purpose      String
+  status       String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership   Membership   @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  stages       ClaimStage[]
+  documents    Document[]
+
+  @@index([userId, createdAt])
+  @@index([membershipId])
+}
+
+model ClaimStage {
+  id                 String    @id @default(cuid())
+  claimId            String
+  seq                Int
+  stageName          String
+  officerName        String?
+  officerDesignation String?
+  office             String?
+  enteredAt          DateTime  @default(now())
+  exitedAt           DateTime?
+  escalatedFrom      String?
+  claim              Claim     @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@unique([claimId, seq])
+  @@index([claimId, exitedAt])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  claimId     String
+  docType     String
+  filename    String
+  sizeBytes   Int
+  uploadedAt  DateTime @default(now())
+  claim       Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+}
+
+model Nominee {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  relation     String
+  dob          DateTime @db.Date
+  sharePercent Decimal  @db.Decimal(5, 2)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Grievance {
+  id             String       @id @default(cuid())
+  userId         String
+  contributionId String
+  subject        String
+  status         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([contributionId])
+}
