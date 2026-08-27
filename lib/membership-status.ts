@@ -25,9 +25,11 @@ export function getEffectiveStatus(
 const VERIFICATION_RESPONSE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
 
 export function getEffectiveVerificationStatus(
-  membership: { verification: VerificationStatus; verificationRequestedAt: Date | null; verificationConfirmedAt: Date | null },
+  membership: { verification?: VerificationStatus | null; verificationRequestedAt?: Date | null; verificationConfirmedAt?: Date | null },
   now = new Date(),
 ): VerificationStatus {
-  const requestExpired = membership.verificationRequestedAt !== null && membership.verificationConfirmedAt === null && now.getTime() - membership.verificationRequestedAt.getTime() >= VERIFICATION_RESPONSE_WINDOW_MS;
-  return requestExpired ? "VERIFIED" : membership.verification;
+  const requestedAt = membership.verificationRequestedAt ?? null;
+  const confirmedAt = membership.verificationConfirmedAt ?? null;
+  const requestExpired = requestedAt !== null && confirmedAt === null && now.getTime() - requestedAt.getTime() >= VERIFICATION_RESPONSE_WINDOW_MS;
+  return requestExpired ? "VERIFIED" : (membership.verification ?? "VERIFIED");
 }
