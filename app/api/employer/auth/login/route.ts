@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   if (!establishment) return NextResponse.json({ message: "No establishment was found for that entity ID." }, { status: 404 });
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set({ name: EMPLOYER_COOKIE_NAME, value: await createEmployerSessionToken(establishment.id), httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/employer", maxAge: 60 * 60 * 8 });
+  // The employer APIs live under /api/employer, so the cookie must cover both the UI and API paths.
+  response.cookies.set({ name: EMPLOYER_COOKIE_NAME, value: await createEmployerSessionToken(establishment.id), httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 8 });
   return response;
 }
