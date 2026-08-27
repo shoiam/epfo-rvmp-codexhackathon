@@ -43,6 +43,12 @@ enum ClaimStatus {
   REJECTED
   SETTLED
 }
+enum ClaimFormType {
+  F31
+  F19
+  F10C
+  F10D
+}
 
 model User {
   id            String       @id @default(cuid())
@@ -129,7 +135,7 @@ model Claim {
   id           String       @id @default(cuid())
   userId       String
   membershipId String
-  formType     String
+  formType     ClaimFormType
   amount       Decimal      @db.Decimal(12, 2)
   purpose      String
   status       ClaimStatus

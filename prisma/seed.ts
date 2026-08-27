@@ -2,6 +2,7 @@ import { MembershipStatus, PrismaClient } from "@prisma/client";
 
 import { canEscalateClaimStage } from "../lib/claim-stage-status";
 import { getEffectiveStatus } from "../lib/membership-status";
+import { formatFormType } from "../lib/claim-forms";
 
 const prisma = new PrismaClient();
 
@@ -238,7 +239,7 @@ async function main() {
     data: {
       userId: arjun.id,
       membershipId: northwindMembership.id,
-      formType: "Form-31",
+      formType: "F31",
       amount: 150_000,
       purpose: "Medical treatment",
       status: "IN_PROGRESS",
@@ -280,6 +281,19 @@ async function main() {
     },
   });
 
+  await prisma.claim.create({
+    data: {
+      userId: arjun.id,
+      membershipId: cygnetMembership.id,
+      formType: "F10C",
+      amount: 72_000,
+      purpose: "EPS withdrawal benefit",
+      status: "SUBMITTED",
+      createdAt: daysAgo(3),
+      stages: { create: [{ seq: 1, stageName: "Submitted", enteredAt: daysAgo(3), exitedAt: null, outcome: null }] },
+    },
+  });
+
   const arjunSummary = await prisma.user.findUniqueOrThrow({
     where: { id: arjun.id },
     include: {
@@ -317,7 +331,7 @@ async function main() {
     const currentStage = claim.stages.find((stage) => stage.exitedAt === null);
     const escalationUnlocked = currentStage !== undefined && canEscalateClaimStage(currentStage);
     return {
-      form: claim.formType,
+      form: formatFormType(claim.formType),
       amount: formatINR(Number(claim.amount)),
       purpose: claim.purpose,
       status: claim.status,
@@ -333,6 +347,12 @@ async function main() {
   console.log("Establishments:", [cygnet.name, northwind.name, vertex.name, halcyon.name].join(" | "));
   console.table(membershipRows);
   console.table(claimRows);
+  const claimCount = await prisma.claim.count({ where: { userId: arjun.id } });
+  const returnedCount = await prisma.claim.count({ where: { userId: arjun.id, status: "RETURNED" } });
+  const returnedStageCount = await prisma.claimStage.count({ where: { claim: { userId: arjun.id }, outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP" } });
+  const seedAssertion = { claimCount, returnedClaims: returnedCount, returnedContributionGapStages: returnedStageCount };
+  console.log("Seed assertion:", seedAssertion);
+  if (claimCount !== 3 || returnedCount !== 1 || returnedStageCount !== 1) throw new Error(`Seed assertion failed: expected 3 claims, 1 returned claim, 1 contribution-gap return; got ${JSON.stringify(seedAssertion)}`);
 }
 
 main()

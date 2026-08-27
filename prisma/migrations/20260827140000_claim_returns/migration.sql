@@ -1,6 +1,8 @@
 CREATE TYPE "ClaimOutcome" AS ENUM ('PASSED','RETURNED','REJECTED','ESCALATED');
 CREATE TYPE "ClaimFaultParty" AS ENUM ('MEMBER','EMPLOYER','EPFO');
 CREATE TYPE "ClaimStatus" AS ENUM ('DRAFT','SUBMITTED','IN_PROGRESS','RETURNED','REJECTED','SETTLED');
+CREATE TYPE "ClaimFormType" AS ENUM ('F31','F19','F10C','F10D');
+ALTER TABLE "Claim" ALTER COLUMN "formType" TYPE "ClaimFormType" USING CASE "formType" WHEN 'Form-31' THEN 'F31' WHEN 'Form-19' THEN 'F19' WHEN 'Form-10C' THEN 'F10C' WHEN 'Form-10D' THEN 'F10D' ELSE "formType" END::"ClaimFormType";
 ALTER TABLE "Claim" ALTER COLUMN "status" TYPE "ClaimStatus" USING CASE "status" WHEN 'UNDER_PROCESS' THEN 'IN_PROGRESS' ELSE "status" END::"ClaimStatus";
 ALTER TABLE "Claim" ADD COLUMN "correctionRound" INTEGER NOT NULL DEFAULT 0, ADD COLUMN "cumulativeDays" INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE "ClaimStage" ADD COLUMN "outcome" "ClaimOutcome", ADD COLUMN "reasonCode" TEXT, ADD COLUMN "reasonNote" TEXT, ADD COLUMN "evidenceRef" TEXT, ADD COLUMN "faultParty" "ClaimFaultParty";
