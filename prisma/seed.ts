@@ -73,7 +73,9 @@ function createNorthwindContributions(membershipId: string) {
 
   return Array.from({ length: 38 }, (_, index) => {
     const month = addMonths(start, index);
-    const wages = 92_000;
+    const monthsSinceApril2024 = Math.max(0, (month.getUTCFullYear() - 2024) * 12 + month.getUTCMonth() - 3);
+    const step = Math.floor(monthsSinceApril2024 / 12);
+    const wages = Math.min(92_000, 78_000 + step * 5_000);
     const eeShare = roundCurrency(wages * EPF_RATE);
     const epsShare = roundCurrency(EPS_WAGE_CAP * EPS_RATE);
     const erShare = roundCurrency(wages * EPF_RATE - epsShare);
@@ -262,6 +264,8 @@ async function main() {
   });
 
   const missingRows = await prisma.contribution.findMany({ where: { membershipId: northwindMembership.id, depositedAt: null }, orderBy: { month: "asc" } });
+  const returnedStageEnteredAt = daysAgo(6);
+  const returnedCumulativeDays = Math.floor((returnedStageEnteredAt.getTime() - daysAgo(17).getTime()) / DAY_MS);
   await prisma.claim.create({
     data: {
       userId: arjun.id,
@@ -271,12 +275,12 @@ async function main() {
       purpose: "Purchase of house / construction",
       status: "RETURNED",
       correctionRound: 0,
-      cumulativeDays: 11,
+      cumulativeDays: returnedCumulativeDays,
       createdAt: daysAgo(17),
       stages: { create: [
         { seq: 1, stageName: "Submitted", enteredAt: daysAgo(17), exitedAt: daysAgo(16), outcome: "PASSED" },
         { seq: 2, stageName: "Scrutiny", enteredAt: daysAgo(16), exitedAt: daysAgo(11), outcome: "PASSED" },
-        { seq: 3, stageName: "Verification", officerName: "S. Iyer", officerDesignation: "Section Supervisor", office: "RO Bandra, Mumbai", enteredAt: daysAgo(6), outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP", reasonNote: "Contribution not received for 03/2026, 04/2026 — eligible advance amount cannot be computed", evidenceRef: missingRows[0]?.id ?? "2026-03", faultParty: "EMPLOYER" },
+        { seq: 3, stageName: "Verification", officerName: "S. Iyer", officerDesignation: "Section Supervisor", office: "RO Bandra, Mumbai", enteredAt: returnedStageEnteredAt, outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP", reasonNote: "Contribution not received for 03/2026, 04/2026 — eligible advance amount cannot be computed", evidenceRef: missingRows[0]?.id ?? "2026-03", faultParty: "EMPLOYER" },
       ] },
     },
   });
