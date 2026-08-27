@@ -21,3 +21,7 @@ Rules:
   Always go through getEffectiveStatus() in lib/membership-status.ts.
   The seeded Cygnet membership stores ACTIVE but is truly ENDOFSERVICE — if a
   screen shows Cygnet as ACTIVE, that is the bug.
+- Claim eligibility, advance limits, and preflight checks read from real
+  membership and contribution data. Never hardcode a pass.
+- Every claim amount and balance is computed from Contribution rows where
+  depositedAt IS NOT NULL. Undeposited months never count toward a balance.
