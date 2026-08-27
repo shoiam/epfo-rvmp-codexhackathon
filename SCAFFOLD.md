@@ -11,7 +11,8 @@ This is the intended file and route structure for the initial Next.js 15 App Rou
 │   ├── (member)/
 │   │   ├── layout.tsx                         # Protected shell: header + sidebar
 │   │   ├── dashboard/
-│   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── service-history/page.tsx
 │   │   ├── service-history/
 │   │   │   └── page.tsx
 │   │   ├── claims/
@@ -37,6 +38,13 @@ This is the intended file and route structure for the initial Next.js 15 App Rou
 │   │   │       └── escalate/route.ts
 │   │   ├── grievances/
 │   │   │   └── route.ts
+│   │   ├── establishments/
+│   │   │   └── lookup/route.ts
+│   │   └── memberships/
+│   │       ├── route.ts
+│   │       └── [membershipId]/
+│   │           ├── exit/route.ts
+│   │           └── verification/route.ts
 │   │   ├── nominees/
 │   │   │   └── route.ts
 │   │   └── passbook/

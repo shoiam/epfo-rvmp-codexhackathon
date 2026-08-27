@@ -109,5 +109,54 @@ summary::-webkit-details-marker { display: none; }
 .lookup-result h3 { margin: 0; color: hsl(var(--foreground)); font-size: 1rem; }
 .lookup-result p { margin: 0; }
 .dialog-message { margin: 1rem 0 0; color: hsl(var(--foreground)); font-size: 0.875rem; }
+.concurrent-banner { display: grid; gap: 0.25rem; margin-bottom: 1rem; border: 1px solid hsl(var(--status)); border-radius: var(--radius); background: hsl(var(--status) / 0.08); color: hsl(var(--foreground)); padding: 1rem; }
+.concurrent-banner strong { font-size: 0.875rem; }
+.concurrent-banner span { color: hsl(var(--muted-foreground)); font-size: 0.875rem; }
+.provenance-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 1rem; }
+.provenance-badge { border-radius: 999px; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); padding: 0.3rem 0.55rem; font-size: 0.75rem; }
+.dialog-actions { display: grid; gap: 0.75rem; margin-top: 1.5rem; }
+.passbook-content { max-width: 90rem; margin: 0 auto; }
+.passbook-table-wrap { overflow-x: auto; border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--surface)); }
+.passbook-table { width: 100%; border-collapse: collapse; min-width: 56rem; color: hsl(var(--foreground)); font-size: 0.8125rem; }
+.passbook-table th { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-align: left; text-transform: uppercase; }
+.passbook-table th, .passbook-table td { border-bottom: 1px solid hsl(var(--border)); padding: 0.8rem 0.75rem; white-space: nowrap; }
+.passbook-table tbody tr:last-child td { border-bottom: 0; }
+.provenance-marker { display: inline-flex; margin-left: 0.4rem; border: 1px solid hsl(var(--border)); border-radius: 999px; color: hsl(var(--muted-foreground)); padding: 0.15rem 0.35rem; font-size: 0.625rem; }
 
 @media (max-width: 40rem) { .dashboard-actions, .membership-details { grid-template-columns: 1fr; } .page-heading-row, .membership-card-top, .membership-footer { align-items: stretch; flex-direction: column; } .page-heading-row .primary-action, .membership-footer .secondary-action { width: 100%; } }
+
+/* Employer workspace: intentionally denser and more utilitarian than the member portal. */
+.employer-root { min-height: 100vh; background: hsl(var(--muted)); color: hsl(var(--foreground)); font-family: Arial, Helvetica, sans-serif; }
+.employer-page { display: grid; min-height: 100vh; place-items: center; padding: 1rem; }
+.employer-login-card { width: 100%; max-width: 28rem; border: 1px solid hsl(var(--border)); background: hsl(var(--surface)); padding: 1.5rem; }
+.employer-kicker { margin: 0; color: hsl(var(--muted-foreground)); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.employer-login-card h1, .employer-header h1 { margin: 0.4rem 0 0; color: hsl(var(--foreground)); font-size: 1.4rem; }
+.employer-muted { color: hsl(var(--muted-foreground)); font-size: 0.875rem; line-height: 1.5; }
+.employer-form, .employer-inline-form { display: grid; gap: 0.55rem; margin-top: 1.25rem; }
+.employer-form label, .employer-inline-form label { color: hsl(var(--foreground)); font-size: 0.8rem; font-weight: 700; }
+.employer-form input, .employer-inline-form textarea { border: 1px solid hsl(var(--border)); border-radius: 0.2rem; background: hsl(var(--surface)); color: hsl(var(--foreground)); padding: 0.65rem; font: inherit; }
+.employer-button, .employer-secondary-button { border: 1px solid hsl(var(--primary)); border-radius: 0.2rem; padding: 0.6rem 0.8rem; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.employer-button { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.employer-secondary-button { background: hsl(var(--surface)); color: hsl(var(--primary)); }
+.employer-message { margin: 0.75rem 0; border-left: 3px solid hsl(var(--primary)); background: hsl(var(--surface)); padding: 0.65rem; color: hsl(var(--foreground)); font-size: 0.8rem; }
+.employer-hint { margin: 1.25rem 0 0; color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
+.employer-shell { max-width: 75rem; margin: 0 auto; padding: 1.5rem; }
+.employer-header { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 1rem; }
+.employer-text-button { border: 0; background: transparent; color: hsl(var(--primary)); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.employer-tabs { display: flex; gap: 1.5rem; border-bottom: 1px solid hsl(var(--border)); margin-bottom: 1.5rem; }
+.employer-tabs button { border: 0; border-bottom: 3px solid transparent; background: transparent; color: hsl(var(--muted-foreground)); padding: 0.85rem 0.1rem; font: inherit; font-size: 0.8rem; cursor: pointer; }
+.employer-tabs button.is-selected { border-bottom-color: hsl(var(--primary)); color: hsl(var(--primary)); font-weight: 700; }
+.employer-tabs span { display: inline-block; margin-left: 0.3rem; border-radius: 999px; background: hsl(var(--border)); padding: 0.15rem 0.4rem; font-size: 0.7rem; }
+.employer-queue h2 { margin: 0 0 0.75rem; font-size: 1rem; }
+.employer-empty { border: 1px dashed hsl(var(--border)); background: hsl(var(--surface)); padding: 2rem; color: hsl(var(--muted-foreground)); font-size: 0.85rem; text-align: center; }
+.employer-row { display: grid; grid-template-columns: 1.1fr 1.5fr 1.1fr auto; align-items: center; gap: 1.25rem; border: 1px solid hsl(var(--border)); background: hsl(var(--surface)); padding: 1rem; }
+.employer-row + .employer-row { border-top: 0; }
+.employer-row h3 { margin: 0; font-size: 0.9rem; }
+.employer-row p { margin: 0.3rem 0 0; color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
+.employer-row dl { display: flex; gap: 1.5rem; margin: 0; }
+.employer-row dt { color: hsl(var(--muted-foreground)); font-size: 0.65rem; text-transform: uppercase; }
+.employer-row dd { margin: 0.2rem 0 0; font-size: 0.8rem; }
+.employer-row-actions { display: flex; gap: 0.5rem; }
+.employer-countdown { color: hsl(var(--primary)) !important; font-size: 0.8rem !important; font-weight: 700; }
+.employer-inline-form { grid-column: 1 / -1; border-top: 1px solid hsl(var(--border)); padding-top: 0.75rem; }
+@media (max-width: 50rem) { .employer-row { grid-template-columns: 1fr; } .employer-row dl { gap: 2rem; } .employer-row-actions { justify-content: flex-start; } }

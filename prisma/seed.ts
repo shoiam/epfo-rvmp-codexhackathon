@@ -93,6 +93,28 @@ function createNorthwindContributions(membershipId: string) {
   });
 }
 
+function createHalcyonContributions(membershipId: string) {
+  const start = date(2016, 8);
+  return Array.from({ length: 34 }, (_, index) => {
+    const month = addMonths(start, index);
+    const wages = roundCurrency(28_000 + (13_000 * index) / 33);
+    const eeShare = roundCurrency(wages * EPF_RATE);
+    const epsShare = roundCurrency(Math.min(wages, EPS_WAGE_CAP) * EPS_RATE);
+    const erShare = roundCurrency(wages * EPF_RATE - epsShare);
+    return {
+      membershipId,
+      month,
+      wages,
+      eeShare,
+      erShare,
+      epsShare,
+      depositedAt: new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 12)),
+      interestCredited: 0,
+      source: "MIGRATED" as const,
+    };
+  });
+}
+
 async function clearExistingDemoData() {
   const demoUsers = await prisma.user.findMany({
     where: { uan: { in: ["100234567890", "100987654321"] } },
@@ -117,7 +139,7 @@ async function clearExistingDemoData() {
 async function main() {
   await clearExistingDemoData();
 
-  const [cygnet, northwind, vertex] = await Promise.all([
+  const [cygnet, northwind, vertex, halcyon] = await Promise.all([
     prisma.establishment.upsert({
       where: { entityId: "MHBAN0045612000" },
       update: { name: "Cygnet Technologies Pvt Ltd", address: "Baner Road, Pune, Maharashtra", epfCode: "MHBAN0045612", city: "Pune" },
@@ -132,6 +154,11 @@ async function main() {
       where: { entityId: "TNCHN0011223000" },
       update: { name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
       create: { entityId: "TNCHN0011223000", name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
+    }),
+    prisma.establishment.upsert({
+      where: { entityId: "TSHYD0033445000" },
+      update: { name: "Halcyon Infotech", address: "HITEC City, Hyderabad, Telangana", epfCode: "TSHYD0033445", city: "Hyderabad" },
+      create: { entityId: "TSHYD0033445000", name: "Halcyon Infotech", address: "HITEC City, Hyderabad, Telangana", epfCode: "TSHYD0033445", city: "Hyderabad" },
     }),
   ]);
 
@@ -186,9 +213,25 @@ async function main() {
     },
   });
 
+  const halcyonMembership = await prisma.membership.create({
+    data: {
+      userId: arjun.id,
+      establishmentId: halcyon.id,
+      status: MembershipStatus.ENDOFSERVICE,
+      doj: date(2016, 8),
+      doe: date(2019, 6, 15),
+      exitReason: "End of contract",
+      joinDeclaredAt: date(2016, 8),
+      joinConfirmedAt: date(2016, 8, 3),
+      source: "MIGRATED",
+      verification: "UNVERIFIED",
+    },
+  });
+
   await prisma.$transaction([
     prisma.contribution.createMany({ data: createCygnetContributions(cygnetMembership.id) }),
     prisma.contribution.createMany({ data: createNorthwindContributions(northwindMembership.id) }),
+    prisma.contribution.createMany({ data: createHalcyonContributions(halcyonMembership.id) }),
   ]);
 
   await prisma.claim.create({
@@ -243,6 +286,8 @@ async function main() {
       establishment: membership.establishment.name,
       storedStatus: membership.status,
       effectiveStatus,
+      source: membership.source,
+      verification: membership.verification,
       contributions: membership.contributions.length,
       missingDepositMonths,
     };
@@ -263,7 +308,7 @@ async function main() {
 
   console.log("\nEPFO Reimagined demo seed complete\n");
   console.table([{ user: arjunSummary.name, UAN: arjunSummary.uan, nominees: arjunSummary.nominees.length, note: "No nominee — warning state" }, { user: priya.name, UAN: priya.uan, nominees: 0, note: "Zero data — empty-state demo" }]);
-  console.log("Establishments:", [cygnet.name, northwind.name, vertex.name].join(" | "));
+  console.log("Establishments:", [cygnet.name, northwind.name, vertex.name, halcyon.name].join(" | "));
   console.table(membershipRows);
   console.table(claimRows);
 }

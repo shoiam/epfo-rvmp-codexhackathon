@@ -1,4 +1,5 @@
 export type MembershipStatus = "PENDING" | "ACTIVE" | "ENDOFSERVICE";
+export type VerificationStatus = "VERIFIED" | "UNVERIFIED" | "DISPUTED";
 
 type MembershipForStatus = {
   status: MembershipStatus;
@@ -19,4 +20,14 @@ export function getEffectiveStatus(
     now.getTime() - membership.exitRequestedAt.getTime() >= EXIT_RESPONSE_WINDOW_MS;
 
   return unansweredExitHasExpired ? "ENDOFSERVICE" : membership.status;
+}
+
+const VERIFICATION_RESPONSE_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
+
+export function getEffectiveVerificationStatus(
+  membership: { verification: VerificationStatus; verificationRequestedAt: Date | null; verificationConfirmedAt: Date | null },
+  now = new Date(),
+): VerificationStatus {
+  const requestExpired = membership.verificationRequestedAt !== null && membership.verificationConfirmedAt === null && now.getTime() - membership.verificationRequestedAt.getTime() >= VERIFICATION_RESPONSE_WINDOW_MS;
+  return requestExpired ? "VERIFIED" : membership.verification;
 }
