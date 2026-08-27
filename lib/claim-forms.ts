@@ -61,3 +61,7 @@ export const FORM_CONFIG: Record<"F31" | "F19" | "F10C" | "F10D", ClaimFormConfi
 };
 
 export const FORM_TYPES = ["F31", "F19", "F10C", "F10D"] as const;
+export function formatFormType(value: string) {
+  const key = value.replace("Form-", "") as keyof typeof FORM_CONFIG;
+  return FORM_CONFIG[key] ? `Form-${key}` : value;
+}

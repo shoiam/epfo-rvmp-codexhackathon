@@ -241,7 +241,7 @@ async function main() {
       formType: "Form-31",
       amount: 150_000,
       purpose: "Medical treatment",
-      status: "UNDER_PROCESS",
+      status: "IN_PROGRESS",
       createdAt: daysAgo(12),
       stages: {
         create: [
@@ -257,6 +257,26 @@ async function main() {
           },
         ],
       },
+    },
+  });
+
+  const missingRows = await prisma.contribution.findMany({ where: { membershipId: northwindMembership.id, depositedAt: null }, orderBy: { month: "asc" } });
+  await prisma.claim.create({
+    data: {
+      userId: arjun.id,
+      membershipId: northwindMembership.id,
+      formType: "F31",
+      amount: 380_000,
+      purpose: "Purchase of house / construction",
+      status: "RETURNED",
+      correctionRound: 0,
+      cumulativeDays: 11,
+      createdAt: daysAgo(17),
+      stages: { create: [
+        { seq: 1, stageName: "Submitted", enteredAt: daysAgo(17), exitedAt: daysAgo(16), outcome: "PASSED" },
+        { seq: 2, stageName: "Scrutiny", enteredAt: daysAgo(16), exitedAt: daysAgo(11), outcome: "PASSED" },
+        { seq: 3, stageName: "Verification", officerName: "S. Iyer", officerDesignation: "Section Supervisor", office: "RO Bandra, Mumbai", enteredAt: daysAgo(6), outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP", reasonNote: "Contribution not received for 03/2026, 04/2026 — eligible advance amount cannot be computed", evidenceRef: missingRows[0]?.id ?? "2026-03", faultParty: "EMPLOYER" },
+      ] },
     },
   });
 
@@ -301,6 +321,8 @@ async function main() {
       amount: formatINR(Number(claim.amount)),
       purpose: claim.purpose,
       status: claim.status,
+      reasonCode: claim.stages.find((stage) => stage.outcome === "RETURNED")?.reasonCode ?? "—",
+      cumulativeDays: claim.cumulativeDays,
       currentStage: currentStage?.stageName ?? "Complete",
       escalateUnlocked: escalationUnlocked ? "Yes" : "No",
     };

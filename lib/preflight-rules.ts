@@ -1,11 +1,10 @@
-/** Machine-checkable claim validation belongs here before submission. */
-export const preflightRules = {
-  ACTIVE_EMPLOYMENT_EXISTS: {
-    blockedForms: ["Form-19"],
-    description: "An active employment must be ended before a Form-19 final settlement claim.",
-  },
+export const PREFLIGHT_RULES = {
+  TWO_MONTH_RULE: "Two-month unemployment rule",
+  SERVICE_UNDER_6M: "At least six months of service",
+  ADVANCE_LIMIT_EXCEEDED: "Advance amount is within the permitted limit",
+  NO_15G_15H: "Tax declaration requirement",
+  IFSC_INVALID: "Valid IFSC code",
+  ACTIVE_EMPLOYMENT_EXISTS: "Active employment check (Form-19 only)",
 } as const;
-
-export function isBlockedByActiveEmployment(formType: string, hasActiveEmployment: boolean) {
-  return hasActiveEmployment && preflightRules.ACTIVE_EMPLOYMENT_EXISTS.blockedForms.includes(formType as "Form-19");
-}
+export type PreflightCode = keyof typeof PREFLIGHT_RULES;
+export const PREFLIGHT_ENTRIES = Object.entries(PREFLIGHT_RULES).map(([code, label]) => ({ code: code as PreflightCode, label }));
