@@ -20,7 +20,7 @@ export async function Header() {
         </summary>
         <div className="absolute right-0 z-20 mt-2 w-56 rounded-md border border-slate-200 bg-white p-2 shadow-lg">
           <p className="px-3 py-2 text-xs text-slate-500">UAN: {user?.uan ?? "Available after sign-in"}</p>
-          <Link href="/passbook" className="flex items-center gap-2 rounded px-3 py-2 text-sm hover:bg-slate-100"><Download className="h-4 w-4" />Download Passbook</Link>
+          <Link href="/dashboard/passbook" className="flex items-center gap-2 rounded px-3 py-2 text-sm hover:bg-slate-100"><Download className="h-4 w-4" />Download Passbook</Link>
           <Link href="/profile" className="flex items-center gap-2 rounded px-3 py-2 text-sm hover:bg-slate-100"><UserRound className="h-4 w-4" />Profile</Link>
           <form action="/api/auth/logout" method="post">
             <button className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm text-red-700 hover:bg-red-50" type="submit"><LogOut className="h-4 w-4" />Logout</button>

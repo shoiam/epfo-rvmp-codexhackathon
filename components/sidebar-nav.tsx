@@ -10,7 +10,7 @@ const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/service-history", label: "Service History", icon: BriefcaseBusiness },
   { href: "/dashboard/claims", label: "Claims", icon: FileText },
-  { href: "/passbook", label: "Passbook", icon: BookOpen },
+  { href: "/dashboard/passbook", label: "Passbook", icon: BookOpen },
   { href: "/nomination", label: "Nomination", icon: Users },
   { href: "/profile", label: "Profile", icon: CircleUserRound },
 ];

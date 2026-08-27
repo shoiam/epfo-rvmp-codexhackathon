@@ -31,7 +31,7 @@ export function DashboardOverview({
 }) {
   const actions: ActionCard[] = [
     { href: "/dashboard/claims", title: "Claims", description: "Track your advance and settlement requests.", badge: claimsInProgress ? `${claimsInProgress} in progress` : "No claims in progress", badgeClass: claimsInProgress ? "status-pending" : "status-active", icon: FileText },
-    { href: "/passbook", title: "Passbook", description: "Review monthly PF and pension deposits.", badge: missingMonths ? `⚠ ${missingMonths} months missing` : "All deposits received", badgeClass: missingMonths ? "status-missing" : "status-active", icon: BookOpen },
+    { href: "/dashboard/passbook", title: "Passbook", description: "Review monthly PF and pension deposits.", badge: missingMonths ? `⚠ ${missingMonths} months missing` : "All deposits received", badgeClass: missingMonths ? "status-missing" : "status-active", icon: BookOpen },
     { href: "/nomination", title: "Nomination", description: "Choose who receives your PF benefits.", badge: nomineeCount ? "Nomination set up" : "⚠ Not set up", badgeClass: nomineeCount ? "status-active" : "status-pending", icon: Users },
     { href: "/dashboard/service-history", title: "Joint Declaration", description: "Add or update your employment service record.", badge: pendingDeclarations ? `${pendingDeclarations} awaiting confirmation` : "No action needed", badgeClass: pendingDeclarations ? "status-pending" : "status-active", icon: Landmark },
   ];
