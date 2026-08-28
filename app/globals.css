@@ -179,6 +179,8 @@ summary::-webkit-details-marker { display: none; }
 .timeline-node.returned i { background:hsl(var(--destructive)); }
 .return-card { margin:.8rem 0 0; padding:1rem; border:1px solid hsl(var(--border)); background:hsl(var(--muted)); }
 .return-card strong { display:block; font-size:1.1rem; }.return-card small { display:block; margin-top:.7rem; color:hsl(var(--muted-foreground)); }.return-evidence { margin:.8rem 0; padding:.7rem; background:hsl(var(--surface)); }.return-evidence a { color:hsl(var(--primary)); }.fault-pill { display:inline-block; margin:.6rem 0; padding:.25rem .5rem; border-radius:999px; background:hsl(var(--warning-muted)); font-size:.75rem; }.secondary-action { margin-top:.7rem; border:0; background:transparent; color:hsl(var(--primary)); cursor:pointer; }
+.return-remedy-button { display:inline-flex; align-items:center; justify-content:center; margin-top:.7rem; border:1px solid hsl(var(--primary)); border-radius:calc(var(--radius) / 2); background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); padding:.7rem 1rem; font:inherit; font-size:.875rem; font-weight:600; cursor:pointer; }
+.return-challenge-button { display:inline-flex; align-items:center; justify-content:center; margin-top:.9rem; border:1px solid hsl(var(--primary)); border-radius:calc(var(--radius) / 2); background:hsl(var(--surface)); color:hsl(var(--primary)); padding:.6rem .85rem; font:inherit; font-size:.875rem; font-weight:600; cursor:pointer; }
 .claims-page h1 { margin: 0; font-size: 1.7rem; color: hsl(var(--foreground)); }
 .muted { color: hsl(var(--muted-foreground)); }
 .claims-tabs { display:flex; gap:1.5rem; border-bottom:1px solid hsl(var(--border)); margin-bottom:2rem; }
