@@ -49,6 +49,11 @@ enum ClaimFormType {
   F10C
   F10D
 }
+enum KycVerificationStatus {
+  VERIFIED
+  NOT_VERIFIED
+  MISMATCH
+}
 
 model User {
   id            String       @id @default(cuid())
@@ -59,6 +64,16 @@ model User {
   address       String
   email         String       @unique
   emailVerified DateTime?
+  pan           String?
+  panVerifiedAt DateTime?
+  panVerificationStatus KycVerificationStatus @default(NOT_VERIFIED)
+  bankAccountNumber String?
+  bankIfsc      String?
+  bankName      String?
+  bankBranch    String?
+  bankVerifiedAt DateTime?
+  bankVerificationStatus KycVerificationStatus @default(NOT_VERIFIED)
+  aadhaarVerifiedAt DateTime?
   memberships   Membership[]
   claims        Claim[]
   nominees      Nominee[]

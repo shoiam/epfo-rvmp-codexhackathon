@@ -1,0 +1,2 @@
+CREATE TYPE "KycVerificationStatus" AS ENUM ('VERIFIED','NOT_VERIFIED','MISMATCH');
+ALTER TABLE "User" ADD COLUMN "pan" TEXT, ADD COLUMN "panVerifiedAt" TIMESTAMP(3), ADD COLUMN "panVerificationStatus" "KycVerificationStatus" NOT NULL DEFAULT 'NOT_VERIFIED', ADD COLUMN "bankAccountNumber" TEXT, ADD COLUMN "bankIfsc" TEXT, ADD COLUMN "bankName" TEXT, ADD COLUMN "bankBranch" TEXT, ADD COLUMN "bankVerifiedAt" TIMESTAMP(3), ADD COLUMN "bankVerificationStatus" "KycVerificationStatus" NOT NULL DEFAULT 'NOT_VERIFIED', ADD COLUMN "aadhaarVerifiedAt" TIMESTAMP(3);

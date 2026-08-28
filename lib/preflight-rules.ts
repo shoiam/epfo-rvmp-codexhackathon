@@ -8,3 +8,9 @@ export const PREFLIGHT_RULES = {
 } as const;
 export type PreflightCode = keyof typeof PREFLIGHT_RULES;
 export const PREFLIGHT_ENTRIES = Object.entries(PREFLIGHT_RULES).map(([code, label]) => ({ code: code as PreflightCode, label }));
+export function evaluateKycPreflight(user: { panVerificationStatus: string; bankVerificationStatus: string }) {
+  return [
+    { code: "IFSC_INVALID" as const, passed: user.bankVerificationStatus === "VERIFIED", reason: user.bankVerificationStatus === "VERIFIED" ? "Verified" : "Verify your bank details on your profile." },
+    { code: "NO_15G_15H" as const, passed: user.panVerificationStatus === "VERIFIED", reason: user.panVerificationStatus === "VERIFIED" ? "Verified" : "Verify your PAN on your profile." },
+  ];
+}

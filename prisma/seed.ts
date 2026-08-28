@@ -174,6 +174,16 @@ async function main() {
       address: "Indiranagar, Bengaluru, Karnataka",
       email: "arjun.rao@example.com",
       emailVerified: new Date(),
+      pan: "ABCDE1234F",
+      panVerifiedAt: new Date(),
+      panVerificationStatus: "VERIFIED",
+      bankAccountNumber: "0001234471",
+      bankIfsc: "HDFC0000521",
+      bankName: "HDFC Bank",
+      bankBranch: "Koregaon Park, Pune",
+      bankVerifiedAt: new Date(),
+      bankVerificationStatus: "VERIFIED",
+      aadhaarVerifiedAt: new Date(),
     },
   });
 
