@@ -171,7 +171,7 @@ async function main() {
       aadhaarLast4: "4471",
       name: "Arjun Rao",
       dob: date(1994, 3, 12),
-      address: "Indiranagar, Bengaluru, Karnataka",
+      address: "412, Sunrise Residency, Baner, Pune 411045",
       email: "arjun.rao@example.com",
       emailVerified: new Date(),
       pan: "ABCDE1234F",
