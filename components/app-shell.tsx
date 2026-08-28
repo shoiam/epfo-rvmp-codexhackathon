@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="px-6 pb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Member portal</p>
           <SidebarNav />
         </aside>
-        <main className="min-w-0 flex-1 px-5 py-8 sm:px-8 lg:px-12">{children}</main>
+        <main className="mx-auto min-w-0 w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 lg:px-12">{children}</main>
       </div>
     </div>
   );

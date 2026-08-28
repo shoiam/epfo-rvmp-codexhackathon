@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronDown, Download, LogOut, UserRound } from "lucide-react";
 import { getSessionUserId } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
+import { Logo } from "@/components/logo";
 
 export async function Header() {
   const userId = await getSessionUserId();
@@ -9,8 +10,7 @@ export async function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-5 lg:px-8">
       <Link href="/dashboard" className="flex items-center gap-3 font-semibold text-navy" aria-label="EPFO Reimagined dashboard">
-        <span className="grid h-9 w-9 place-items-center rounded bg-navy text-sm font-bold text-white">EP</span>
-        <span className="hidden sm:block">EPFO Reimagined</span>
+        <Logo size="sm" />
       </Link>
       <details className="relative">
         <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">

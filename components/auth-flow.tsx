@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { getMockEkycProfile } from "@/lib/mock-ekyc";
 import { formatAadhaar, isValidAadhaar, normaliseAadhaar } from "@/lib/verhoeff";
+import { Logo } from "@/components/logo";
 
 type Mode = "login" | "signup";
 
@@ -64,6 +65,7 @@ export function AuthFlow({ mode }: { mode: Mode }) {
   const [aadhaar, setAadhaar] = useState("");
   const [otp, setOtp] = useState("");
   const [requestingOtp, setRequestingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
@@ -97,12 +99,14 @@ export function AuthFlow({ mode }: { mode: Mode }) {
       return;
     }
 
+    setVerifyingOtp(true);
     const response = await fetch("/api/auth/login/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aadhaar: normaliseAadhaar(aadhaar), otp }),
     });
     if (!response.ok) {
+      setVerifyingOtp(false);
       setMessage(await readApiMessage(response, "We could not sign you in. Please try again."));
       return;
     }
@@ -155,7 +159,7 @@ export function AuthFlow({ mode }: { mode: Mode }) {
         <form className="auth-form" onSubmit={verifyAadhaarOtp}>
           <p className="auth-copy">Enter the six-digit OTP sent to your Aadhaar-linked mobile number.</p>
           <OtpBoxes value={otp} onChange={setOtp} />
-          <button className="auth-button" type="submit">Verify Aadhaar</button>
+          <button className="auth-button" disabled={verifyingOtp} type="submit">{verifyingOtp ? "Verifying Aadhaar…" : "Verify Aadhaar"}</button>
         </form>
       )}
     </>
@@ -164,7 +168,7 @@ export function AuthFlow({ mode }: { mode: Mode }) {
   return (
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="auth-heading">
-        <div className="auth-brand"><span className="auth-mark">EP</span><span>EPFO Reimagined</span></div>
+            <div className="auth-brand"><Logo size="lg" /></div>
         {isSignup && <ol className="auth-progress" aria-label="Registration progress"><li className={step >= 1 ? "is-current" : ""}>1. Aadhaar</li><li className={step >= 2 ? "is-current" : ""}>2. Confirm</li><li className={step >= 3 ? "is-current" : ""}>3. Email</li></ol>}
         {step === 1 && aadhaarStep}
         {isSignup && step === 2 && (
