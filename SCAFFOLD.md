@@ -107,22 +107,22 @@ This is the intended file and route structure for the initial Next.js 15 App Rou
 
 ## Route Map
 
-| Route | Purpose |
-| --- | --- |
-| `/login` | Member sign-in and signed session creation |
-| `/dashboard` | PF/pension summary and attention items |
-| `/service-history` | Membership and employer history |
-| `/claims` | Claim list |
-| `/claims/new` | Start a new claim |
-| `/claims/[claimId]` | Claim details, documents, stages, and escalation action |
-| `/passbook` | Contributions, trends, and missing-deposit grievance entry point |
-| `/nomination` | Nominee management and share validation |
-| `/profile` | Personal and contact information |
-| `/api/auth/login` | Creates the signed `httpOnly` userId cookie |
-| `/api/auth/logout` | Clears the session cookie |
-| `/api/claims` | Claim creation/list mutations as needed |
-| `/api/claims/[claimId]` | Claim-specific operations |
-| `/api/claims/[claimId]/escalate` | Escalation submission after server-side eligibility check |
-| `/api/grievances` | Grievance creation |
-| `/api/nominees` | Nominee mutations |
-| `/api/passbook/download` | Authenticated passbook export |
+| Route                            | Purpose                                                          |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `/login`                         | Member sign-in and signed session creation                       |
+| `/dashboard`                     | PF/pension summary and attention items                           |
+| `/service-history`               | Membership and employer history                                  |
+| `/claims`                        | Claim list                                                       |
+| `/claims/new`                    | Start a new claim                                                |
+| `/claims/[claimId]`              | Claim details, documents, stages, and escalation action          |
+| `/passbook`                      | Contributions, trends, and missing-deposit grievance entry point |
+| `/nomination`                    | Nominee management and share validation                          |
+| `/profile`                       | Personal and contact information                                 |
+| `/api/auth/login`                | Creates the signed `httpOnly` userId cookie                      |
+| `/api/auth/logout`               | Clears the session cookie                                        |
+| `/api/claims`                    | Claim creation/list mutations as needed                          |
+| `/api/claims/[claimId]`          | Claim-specific operations                                        |
+| `/api/claims/[claimId]/escalate` | Escalation submission after server-side eligibility check        |
+| `/api/grievances`                | Grievance creation                                               |
+| `/api/nominees`                  | Nominee mutations                                                |
+| `/api/passbook/download`         | Authenticated passbook export                                    |

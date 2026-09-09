@@ -1,8 +1,199 @@
 // @ts-nocheck
 "use client";
 import { useState } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine, ResponsiveContainer } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+} from "recharts";
 import { formatINR } from "@/lib/format";
-type Row={id:string;month:string;wages:number;ee:number;er:number;eps:number;interest:number;deposited:boolean;employer:string;source:string};
+type Row = {
+  id: string;
+  month: string;
+  wages: number;
+  ee: number;
+  er: number;
+  eps: number;
+  interest: number;
+  deposited: boolean;
+  employer: string;
+  source: string;
+};
 // @ts-ignore chart is narrowed by the chart renderer below
-export default function PassbookDashboard({rows,changes}:{rows:Row[];changes:{date:string;name:string}[]}){const [toast,setToast]=useState("");const missing=rows.filter(r=>!r.deposited);const deposited=rows.filter(r=>r.deposited);const totals={ee:deposited.reduce((n,r)=>n+r.ee,0),er:deposited.reduce((n,r)=>n+r.er,0),eps:deposited.reduce((n,r)=>n+r.eps,0),interest:deposited.reduce((n,r)=>n+r.interest,0)};const total=totals.ee+totals.er+totals.interest;const chart=[];let balance=0;for(const r of [...rows].sort((a,b)=>a.month.localeCompare(b.month))){if(r.deposited)balance+=r.ee+r.er+r.interest;chart.push({date:r.month,balance});}const pct=(n:number)=>total?Math.round(n/total*100):0;const raise=async(id:string)=>{const r=await fetch("/api/passbook/grievance",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({contributionId:id})});const d=await r.json();setToast(r.ok?d.message:d.error);};return <section className="passbook-content"><div className="page-heading-row"><div><p className="dashboard-eyebrow">Contribution ledger</p><h1>Passbook</h1></div></div>{missing.length>0&&<div className="missing-banner">⚠ {missing.length} months of contributions were never deposited by your employer.</div>}{toast&&<div className="claim-toast">{toast}</div>}<section className="passbook-hero"><p>Total corpus</p><h2>{formatINR(total)}</h2><div className="corpus-bar">{Object.entries(totals).map(([k,v])=><span key={k} className={`corpus-${k}`} style={{width:`${Math.max(pct(v),1)}%`}}/>)}</div><div className="corpus-legend">{Object.entries(totals).map(([k,v])=><span key={k}><b>{k==="ee"?"Your contribution":k==="er"?"Employer contribution":k==="eps"?"Pension (EPS)":"Interest earned"}</b><br/>{formatINR(v)} · {pct(v)}%</span>)}</div><p className="muted">Interest earned so far: {formatINR(totals.interest)} — {pct(totals.interest)}% of your total.</p></section><section className="passbook-growth"><h2>Growth over time</h2><ResponsiveContainer width="100%" height={280}><AreaChart data={chart}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/><XAxis dataKey="date" tickFormatter={d=>new Date(d).toLocaleDateString("en-IN",{month:"short",year:"numeric"})}/><YAxis tickFormatter={v=>`₹${Math.round(v/1000)}k`}/><Tooltip formatter={(v)=>formatINR(Number(v))}/><Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / .12)"/>{changes.map(c=><ReferenceLine key={c.date} x={c.date} stroke="hsl(var(--warning))" label={{value:c.name,position:"top"}}/>)}</AreaChart></ResponsiveContainer></section><section><h2>Ledger</h2>{Object.entries(rows.reduce<Record<string,Row[]>>((a,r)=>{const fy=new Date(r.month).getUTCMonth()>=3?`${new Date(r.month).getUTCFullYear()}–${new Date(r.month).getUTCFullYear()+1}`:`${new Date(r.month).getUTCFullYear()-1}–${new Date(r.month).getUTCFullYear()}`;const key=`${r.employer}|${fy}`;(a[key]??=[]).push(r);return a},{})).map(([key,list])=><div className="ledger-group" key={key}><h3>{key.replace("|"," · FY ")}</h3><table className="passbook-table"><thead><tr><th>Month</th><th>Wages</th><th>Employee</th><th>Employer</th><th>Pension (EPS)</th><th>Running balance</th></tr></thead><tbody>{list.map(r=><tr id={r.month.slice(0,7)} className={r.deposited?"":"missing-row"} key={r.id}><td>{new Date(r.month).toLocaleDateString("en-IN",{month:"short",year:"numeric"})}</td><td>{formatINR(r.wages)}</td><td>{formatINR(r.ee)}</td><td>{formatINR(r.er)}</td><td>{formatINR(r.eps)}</td><td>{r.deposited?formatINR(chart.find(c=>c.date===r.month)?.balance||0):<>Employer did not deposit — {formatINR(r.ee+r.er)} missing <button className="secondary-action" onClick={()=>raise(r.id)}>Raise grievance</button></>}</td></tr>)}</tbody></table></div>)}</section></section>}
+export default function PassbookDashboard({
+  rows,
+  changes,
+}: {
+  rows: Row[];
+  changes: { date: string; name: string }[];
+}) {
+  const [toast, setToast] = useState("");
+  const missing = rows.filter((r) => !r.deposited);
+  const deposited = rows.filter((r) => r.deposited);
+  const totals = {
+    ee: deposited.reduce((n, r) => n + r.ee, 0),
+    er: deposited.reduce((n, r) => n + r.er, 0),
+    eps: deposited.reduce((n, r) => n + r.eps, 0),
+    interest: deposited.reduce((n, r) => n + r.interest, 0),
+  };
+  const total = totals.ee + totals.er + totals.interest;
+  const chart = [];
+  let balance = 0;
+  for (const r of [...rows].sort((a, b) => a.month.localeCompare(b.month))) {
+    if (r.deposited) balance += r.ee + r.er + r.interest;
+    chart.push({ date: r.month, balance });
+  }
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+  const raise = async (id: string) => {
+    const r = await fetch("/api/passbook/grievance", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contributionId: id }),
+    });
+    const d = await r.json();
+    setToast(r.ok ? d.message : d.error);
+  };
+  return (
+    <section className="passbook-content">
+      <div className="page-heading-row">
+        <div>
+          <p className="dashboard-eyebrow">Contribution ledger</p>
+          <h1>Passbook</h1>
+        </div>
+      </div>
+      {missing.length > 0 && (
+        <div className="missing-banner">
+          ⚠ {missing.length} months of contributions were never deposited by your employer.
+        </div>
+      )}
+      {toast && <div className="claim-toast">{toast}</div>}
+      <section className="passbook-hero">
+        <p>Total corpus</p>
+        <h2>{formatINR(total)}</h2>
+        <div className="corpus-bar">
+          {Object.entries(totals).map(([k, v]) => (
+            <span key={k} className={`corpus-${k}`} style={{ width: `${Math.max(pct(v), 1)}%` }} />
+          ))}
+        </div>
+        <div className="corpus-legend">
+          {Object.entries(totals).map(([k, v]) => (
+            <span key={k}>
+              <b>
+                {k === "ee"
+                  ? "Your contribution"
+                  : k === "er"
+                    ? "Employer contribution"
+                    : k === "eps"
+                      ? "Pension (EPS)"
+                      : "Interest earned"}
+              </b>
+              <br />
+              {formatINR(v)} · {pct(v)}%
+            </span>
+          ))}
+        </div>
+        <p className="muted">
+          Interest earned so far: {formatINR(totals.interest)} — {pct(totals.interest)}% of your
+          total.
+        </p>
+      </section>
+      <section className="passbook-growth">
+        <h2>Growth over time</h2>
+        <ResponsiveContainer width="100%" height={280}>
+          <AreaChart data={chart}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(d) =>
+                new Date(d).toLocaleDateString("en-IN", { month: "short", year: "numeric" })
+              }
+            />
+            <YAxis tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} />
+            <Tooltip formatter={(v) => formatINR(Number(v))} />
+            <Area
+              type="monotone"
+              dataKey="balance"
+              stroke="hsl(var(--primary))"
+              fill="hsl(var(--primary) / .12)"
+            />
+            {changes.map((c) => (
+              <ReferenceLine
+                key={c.date}
+                x={c.date}
+                stroke="hsl(var(--warning))"
+                label={{ value: c.name, position: "top" }}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </section>
+      <section>
+        <h2>Ledger</h2>
+        {Object.entries(
+          rows.reduce<Record<string, Row[]>>((a, r) => {
+            const fy =
+              new Date(r.month).getUTCMonth() >= 3
+                ? `${new Date(r.month).getUTCFullYear()}–${new Date(r.month).getUTCFullYear() + 1}`
+                : `${new Date(r.month).getUTCFullYear() - 1}–${new Date(r.month).getUTCFullYear()}`;
+            const key = `${r.employer}|${fy}`;
+            (a[key] ??= []).push(r);
+            return a;
+          }, {}),
+        ).map(([key, list]) => (
+          <div className="ledger-group" key={key}>
+            <h3>{key.replace("|", " · FY ")}</h3>
+            <table className="passbook-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Wages</th>
+                  <th>Employee</th>
+                  <th>Employer</th>
+                  <th>Pension (EPS)</th>
+                  <th>Running balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((r) => (
+                  <tr
+                    id={r.month.slice(0, 7)}
+                    className={r.deposited ? "" : "missing-row"}
+                    key={r.id}
+                  >
+                    <td>
+                      {new Date(r.month).toLocaleDateString("en-IN", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td>{formatINR(r.wages)}</td>
+                    <td>{formatINR(r.ee)}</td>
+                    <td>{formatINR(r.er)}</td>
+                    <td>{formatINR(r.eps)}</td>
+                    <td>
+                      {r.deposited ? (
+                        formatINR(chart.find((c) => c.date === r.month)?.balance || 0)
+                      ) : (
+                        <>
+                          Employer did not deposit — {formatINR(r.ee + r.er)} missing{" "}
+                          <button className="secondary-action" onClick={() => raise(r.id)}>
+                            Raise grievance
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </section>
+    </section>
+  );
+}

@@ -1,4 +1,50 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/current-user";
-export async function POST(req:Request){const id=await getSessionUserId();if(!id)return NextResponse.json({error:"Please sign in."},{status:401});const b=await req.json();const user=await prisma.user.findUniqueOrThrow({where:{id}});const now=new Date();if(b.section==="aadhaar")return NextResponse.json({ok:true,diff:{name:{old:user.name,new:user.name},dob:{old:user.dob.toISOString().slice(0,10),new:user.dob.toISOString().slice(0,10)},address:{old:user.address,new:"Indiranagar, Bengaluru, Karnataka"}}});if(b.section==="aadhaar-accept")return NextResponse.json(await prisma.user.update({where:{id},data:{address:b.address||user.address,aadhaarVerifiedAt:now},select:{aadhaarVerifiedAt:true}}));if(b.section==="pan"){const matched=(b.pan||user.pan)==="ABCDE1234F";return NextResponse.json(await prisma.user.update({where:{id},data:{pan:b.pan||user.pan,panVerifiedAt:now,panVerificationStatus:matched?"VERIFIED":"MISMATCH"},select:{panVerificationStatus:true}}));}if(b.section==="bank")return NextResponse.json(await prisma.user.update({where:{id},data:{bankVerifiedAt:now,bankVerificationStatus:"VERIFIED"},select:{bankVerificationStatus:true}}));return NextResponse.json({error:"Unknown section."},{status:400});}
+export async function POST(req: Request) {
+  const id = await getSessionUserId();
+  if (!id) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  const b = await req.json();
+  const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+  const now = new Date();
+  if (b.section === "aadhaar")
+    return NextResponse.json({
+      ok: true,
+      diff: {
+        name: { old: user.name, new: user.name },
+        dob: { old: user.dob.toISOString().slice(0, 10), new: user.dob.toISOString().slice(0, 10) },
+        address: { old: user.address, new: "Indiranagar, Bengaluru, Karnataka" },
+      },
+    });
+  if (b.section === "aadhaar-accept")
+    return NextResponse.json(
+      await prisma.user.update({
+        where: { id },
+        data: { address: b.address || user.address, aadhaarVerifiedAt: now },
+        select: { aadhaarVerifiedAt: true },
+      }),
+    );
+  if (b.section === "pan") {
+    const matched = (b.pan || user.pan) === "ABCDE1234F";
+    return NextResponse.json(
+      await prisma.user.update({
+        where: { id },
+        data: {
+          pan: b.pan || user.pan,
+          panVerifiedAt: now,
+          panVerificationStatus: matched ? "VERIFIED" : "MISMATCH",
+        },
+        select: { panVerificationStatus: true },
+      }),
+    );
+  }
+  if (b.section === "bank")
+    return NextResponse.json(
+      await prisma.user.update({
+        where: { id },
+        data: { bankVerifiedAt: now, bankVerificationStatus: "VERIFIED" },
+        select: { bankVerificationStatus: true },
+      }),
+    );
+  return NextResponse.json({ error: "Unknown section." }, { status: 400 });
+}

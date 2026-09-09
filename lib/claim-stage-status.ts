@@ -4,5 +4,7 @@ export function canEscalateClaimStage(
   stage: { enteredAt: Date; exitedAt: Date | null },
   now = new Date(),
 ) {
-  return stage.exitedAt === null && now.getTime() - stage.enteredAt.getTime() >= ESCALATION_WINDOW_MS;
+  return (
+    stage.exitedAt === null && now.getTime() - stage.enteredAt.getTime() >= ESCALATION_WINDOW_MS
+  );
 }

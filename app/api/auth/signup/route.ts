@@ -20,19 +20,39 @@ async function generateUan() {
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET || process.env.SESSION_SECRET === "replace-with-a-long-random-secret") {
-      return NextResponse.json({ message: "Registration is not configured yet. Add DATABASE_URL and SESSION_SECRET in Vercel." }, { status: 503 });
+    if (
+      !process.env.DATABASE_URL ||
+      !process.env.SESSION_SECRET ||
+      process.env.SESSION_SECRET === "replace-with-a-long-random-secret"
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Registration is not configured yet. Add DATABASE_URL and SESSION_SECRET in Vercel.",
+        },
+        { status: 503 },
+      );
     }
-    const { aadhaar, email, otp } = await request.json() as { aadhaar?: string; email?: string; otp?: string };
+    const { aadhaar, email, otp } = (await request.json()) as {
+      aadhaar?: string;
+      email?: string;
+      otp?: string;
+    };
     const digits = normaliseAadhaar(aadhaar ?? "");
 
     if (!isValidAadhaar(digits) || otp !== "123456" || !email || !/^\S+@\S+\.\S+$/.test(email)) {
-      return NextResponse.json({ message: "Please complete Aadhaar, email, and verification correctly." }, { status: 400 });
+      return NextResponse.json(
+        { message: "Please complete Aadhaar, email, and verification correctly." },
+        { status: 400 },
+      );
     }
     const aadhaarLast4 = digits.slice(-4);
     const existing = await prisma.user.findFirst({ where: { OR: [{ aadhaarLast4 }, { email }] } });
     if (existing) {
-      return NextResponse.json({ message: "An account already exists for these details. Please sign in." }, { status: 409 });
+      return NextResponse.json(
+        { message: "An account already exists for these details. Please sign in." },
+        { status: 409 },
+      );
     }
 
     const profile = getMockEkycProfile();
@@ -61,6 +81,12 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error("Signup failed", error);
-    return NextResponse.json({ message: "Registration is temporarily unavailable. Check Vercel environment variables and database connection." }, { status: 500 });
+    return NextResponse.json(
+      {
+        message:
+          "Registration is temporarily unavailable. Check Vercel environment variables and database connection.",
+      },
+      { status: 500 },
+    );
   }
 }

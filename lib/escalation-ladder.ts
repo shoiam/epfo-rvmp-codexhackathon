@@ -7,6 +7,8 @@ export const ESCALATION_LADDER = [
 ] as const;
 
 export function nextEscalationOfficer(currentDesignation: string | null) {
-  const currentIndex = ESCALATION_LADDER.findIndex((rung) => rung.designation === currentDesignation);
+  const currentIndex = ESCALATION_LADDER.findIndex(
+    (rung) => rung.designation === currentDesignation,
+  );
   return ESCALATION_LADDER[Math.min(currentIndex + 1, ESCALATION_LADDER.length - 1)];
 }

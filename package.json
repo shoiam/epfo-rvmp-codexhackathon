@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write app components lib prisma *.ts *.md",
+    "format:check": "prettier --check app components lib prisma *.ts *.md",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed"
@@ -30,6 +32,7 @@
     "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
+    "prettier": "^3.9.6",
     "prisma": "^6.16.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, BriefcaseBusiness, CircleUserRound, FileText, LayoutDashboard, Users } from "lucide-react";
+import {
+  BookOpen,
+  BriefcaseBusiness,
+  CircleUserRound,
+  FileText,
+  LayoutDashboard,
+  Users,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 

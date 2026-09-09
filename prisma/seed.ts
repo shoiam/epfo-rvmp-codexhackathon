@@ -29,7 +29,11 @@ function roundCurrency(amount: number) {
 }
 
 function formatMonth(month: Date) {
-  return new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(month);
+  return new Intl.DateTimeFormat("en-IN", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(month);
 }
 
 function formatINR(amount: number) {
@@ -50,7 +54,8 @@ function createCygnetContributions(membershipId: string) {
     const eeShare = roundCurrency(wages * EPF_RATE);
     const epsShare = roundCurrency(Math.min(wages, EPS_WAGE_CAP) * EPS_RATE);
     const erShare = roundCurrency(wages * EPF_RATE - epsShare);
-    const interestCredited = month.getUTCMonth() === 2 ? roundCurrency(pfBalance * ANNUAL_INTEREST_RATE) : 0;
+    const interestCredited =
+      month.getUTCMonth() === 2 ? roundCurrency(pfBalance * ANNUAL_INTEREST_RATE) : 0;
 
     pfBalance += eeShare + erShare + interestCredited;
 
@@ -73,7 +78,10 @@ function createNorthwindContributions(membershipId: string) {
 
   return Array.from({ length: 38 }, (_, index) => {
     const month = addMonths(start, index);
-    const monthsSinceApril2024 = Math.max(0, (month.getUTCFullYear() - 2024) * 12 + month.getUTCMonth() - 3);
+    const monthsSinceApril2024 = Math.max(
+      0,
+      (month.getUTCFullYear() - 2024) * 12 + month.getUTCMonth() - 3,
+    );
     const step = Math.floor(monthsSinceApril2024 / 12);
     const wages = Math.min(92_000, 78_000 + step * 5_000);
     const eeShare = roundCurrency(wages * EPF_RATE);
@@ -145,23 +153,67 @@ async function main() {
   const [cygnet, northwind, vertex, halcyon] = await Promise.all([
     prisma.establishment.upsert({
       where: { entityId: "MHBAN0045612000" },
-      update: { name: "Cygnet Technologies Pvt Ltd", address: "Baner Road, Pune, Maharashtra", epfCode: "MHBAN0045612", city: "Pune" },
-      create: { entityId: "MHBAN0045612000", name: "Cygnet Technologies Pvt Ltd", address: "Baner Road, Pune, Maharashtra", epfCode: "MHBAN0045612", city: "Pune" },
+      update: {
+        name: "Cygnet Technologies Pvt Ltd",
+        address: "Baner Road, Pune, Maharashtra",
+        epfCode: "MHBAN0045612",
+        city: "Pune",
+      },
+      create: {
+        entityId: "MHBAN0045612000",
+        name: "Cygnet Technologies Pvt Ltd",
+        address: "Baner Road, Pune, Maharashtra",
+        epfCode: "MHBAN0045612",
+        city: "Pune",
+      },
     }),
     prisma.establishment.upsert({
       where: { entityId: "KABLR0078934000" },
-      update: { name: "Northwind Systems India", address: "Outer Ring Road, Bengaluru, Karnataka", epfCode: "KABLR0078934", city: "Bengaluru" },
-      create: { entityId: "KABLR0078934000", name: "Northwind Systems India", address: "Outer Ring Road, Bengaluru, Karnataka", epfCode: "KABLR0078934", city: "Bengaluru" },
+      update: {
+        name: "Northwind Systems India",
+        address: "Outer Ring Road, Bengaluru, Karnataka",
+        epfCode: "KABLR0078934",
+        city: "Bengaluru",
+      },
+      create: {
+        entityId: "KABLR0078934000",
+        name: "Northwind Systems India",
+        address: "Outer Ring Road, Bengaluru, Karnataka",
+        epfCode: "KABLR0078934",
+        city: "Bengaluru",
+      },
     }),
     prisma.establishment.upsert({
       where: { entityId: "TNCHN0011223000" },
-      update: { name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
-      create: { entityId: "TNCHN0011223000", name: "Vertex Analytics", address: "OMR, Chennai, Tamil Nadu", epfCode: "TNCHN0011223", city: "Chennai" },
+      update: {
+        name: "Vertex Analytics",
+        address: "OMR, Chennai, Tamil Nadu",
+        epfCode: "TNCHN0011223",
+        city: "Chennai",
+      },
+      create: {
+        entityId: "TNCHN0011223000",
+        name: "Vertex Analytics",
+        address: "OMR, Chennai, Tamil Nadu",
+        epfCode: "TNCHN0011223",
+        city: "Chennai",
+      },
     }),
     prisma.establishment.upsert({
       where: { entityId: "TSHYD0033445000" },
-      update: { name: "Halcyon Infotech", address: "HITEC City, Hyderabad, Telangana", epfCode: "TSHYD0033445", city: "Hyderabad" },
-      create: { entityId: "TSHYD0033445000", name: "Halcyon Infotech", address: "HITEC City, Hyderabad, Telangana", epfCode: "TSHYD0033445", city: "Hyderabad" },
+      update: {
+        name: "Halcyon Infotech",
+        address: "HITEC City, Hyderabad, Telangana",
+        epfCode: "TSHYD0033445",
+        city: "Hyderabad",
+      },
+      create: {
+        entityId: "TSHYD0033445000",
+        name: "Halcyon Infotech",
+        address: "HITEC City, Hyderabad, Telangana",
+        epfCode: "TSHYD0033445",
+        city: "Hyderabad",
+      },
     }),
   ]);
 
@@ -273,9 +325,14 @@ async function main() {
     },
   });
 
-  const missingRows = await prisma.contribution.findMany({ where: { membershipId: northwindMembership.id, depositedAt: null }, orderBy: { month: "asc" } });
+  const missingRows = await prisma.contribution.findMany({
+    where: { membershipId: northwindMembership.id, depositedAt: null },
+    orderBy: { month: "asc" },
+  });
   const returnedStageEnteredAt = daysAgo(6);
-  const returnedCumulativeDays = Math.floor((returnedStageEnteredAt.getTime() - daysAgo(17).getTime()) / DAY_MS);
+  const returnedCumulativeDays = Math.floor(
+    (returnedStageEnteredAt.getTime() - daysAgo(17).getTime()) / DAY_MS,
+  );
   await prisma.claim.create({
     data: {
       userId: arjun.id,
@@ -287,11 +344,38 @@ async function main() {
       correctionRound: 0,
       cumulativeDays: returnedCumulativeDays,
       createdAt: daysAgo(17),
-      stages: { create: [
-        { seq: 1, stageName: "Submitted", enteredAt: daysAgo(17), exitedAt: daysAgo(16), outcome: "PASSED" },
-        { seq: 2, stageName: "Scrutiny", enteredAt: daysAgo(16), exitedAt: daysAgo(11), outcome: "PASSED" },
-        { seq: 3, stageName: "Verification", officerName: "S. Iyer", officerDesignation: "Section Supervisor", office: "RO Bandra, Mumbai", enteredAt: returnedStageEnteredAt, outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP", reasonNote: "Contribution not received for 03/2026, 04/2026 — eligible advance amount cannot be computed", evidenceRef: missingRows[0]?.id ?? "2026-03", faultParty: "EMPLOYER" },
-      ] },
+      stages: {
+        create: [
+          {
+            seq: 1,
+            stageName: "Submitted",
+            enteredAt: daysAgo(17),
+            exitedAt: daysAgo(16),
+            outcome: "PASSED",
+          },
+          {
+            seq: 2,
+            stageName: "Scrutiny",
+            enteredAt: daysAgo(16),
+            exitedAt: daysAgo(11),
+            outcome: "PASSED",
+          },
+          {
+            seq: 3,
+            stageName: "Verification",
+            officerName: "S. Iyer",
+            officerDesignation: "Section Supervisor",
+            office: "RO Bandra, Mumbai",
+            enteredAt: returnedStageEnteredAt,
+            outcome: "RETURNED",
+            reasonCode: "EMPLOYER_CONTRIBUTION_GAP",
+            reasonNote:
+              "Contribution not received for 03/2026, 04/2026 — eligible advance amount cannot be computed",
+            evidenceRef: missingRows[0]?.id ?? "2026-03",
+            faultParty: "EMPLOYER",
+          },
+        ],
+      },
     },
   });
 
@@ -304,7 +388,11 @@ async function main() {
       purpose: "EPS withdrawal benefit",
       status: "SUBMITTED",
       createdAt: daysAgo(3),
-      stages: { create: [{ seq: 1, stageName: "Submitted", enteredAt: daysAgo(3), exitedAt: null, outcome: null }] },
+      stages: {
+        create: [
+          { seq: 1, stageName: "Submitted", enteredAt: daysAgo(3), exitedAt: null, outcome: null },
+        ],
+      },
     },
   });
 
@@ -324,10 +412,11 @@ async function main() {
   });
 
   const membershipRows = arjunSummary.memberships.map((membership) => {
-    const missingDepositMonths = membership.contributions
-      .filter((contribution) => contribution.depositedAt === null)
-      .map((contribution) => formatMonth(contribution.month))
-      .join(", ") || "None";
+    const missingDepositMonths =
+      membership.contributions
+        .filter((contribution) => contribution.depositedAt === null)
+        .map((contribution) => formatMonth(contribution.month))
+        .join(", ") || "None";
     const effectiveStatus = getEffectiveStatus(membership);
 
     return {
@@ -341,32 +430,60 @@ async function main() {
     };
   });
 
-  const claimRows = arjunSummary.memberships.flatMap((membership) => membership.claims.map((claim) => {
-    const currentStage = claim.stages.find((stage) => stage.exitedAt === null);
-    const escalationUnlocked = currentStage !== undefined && canEscalateClaimStage(currentStage);
-    return {
-      form: formatFormType(claim.formType),
-      amount: formatINR(Number(claim.amount)),
-      purpose: claim.purpose,
-      status: claim.status,
-      reasonCode: claim.stages.find((stage) => stage.outcome === "RETURNED")?.reasonCode ?? "—",
-      cumulativeDays: claim.cumulativeDays,
-      currentStage: currentStage?.stageName ?? "Complete",
-      escalateUnlocked: escalationUnlocked ? "Yes" : "No",
-    };
-  }));
+  const claimRows = arjunSummary.memberships.flatMap((membership) =>
+    membership.claims.map((claim) => {
+      const currentStage = claim.stages.find((stage) => stage.exitedAt === null);
+      const escalationUnlocked = currentStage !== undefined && canEscalateClaimStage(currentStage);
+      return {
+        form: formatFormType(claim.formType),
+        amount: formatINR(Number(claim.amount)),
+        purpose: claim.purpose,
+        status: claim.status,
+        reasonCode: claim.stages.find((stage) => stage.outcome === "RETURNED")?.reasonCode ?? "—",
+        cumulativeDays: claim.cumulativeDays,
+        currentStage: currentStage?.stageName ?? "Complete",
+        escalateUnlocked: escalationUnlocked ? "Yes" : "No",
+      };
+    }),
+  );
 
   console.log("\nEPFO Reimagined demo seed complete\n");
-  console.table([{ user: arjunSummary.name, UAN: arjunSummary.uan, nominees: arjunSummary.nominees.length, note: "No nominee — warning state" }, { user: priya.name, UAN: priya.uan, nominees: 0, note: "Zero data — empty-state demo" }]);
-  console.log("Establishments:", [cygnet.name, northwind.name, vertex.name, halcyon.name].join(" | "));
+  console.table([
+    {
+      user: arjunSummary.name,
+      UAN: arjunSummary.uan,
+      nominees: arjunSummary.nominees.length,
+      note: "No nominee — warning state",
+    },
+    { user: priya.name, UAN: priya.uan, nominees: 0, note: "Zero data — empty-state demo" },
+  ]);
+  console.log(
+    "Establishments:",
+    [cygnet.name, northwind.name, vertex.name, halcyon.name].join(" | "),
+  );
   console.table(membershipRows);
   console.table(claimRows);
   const claimCount = await prisma.claim.count({ where: { userId: arjun.id } });
-  const returnedCount = await prisma.claim.count({ where: { userId: arjun.id, status: "RETURNED" } });
-  const returnedStageCount = await prisma.claimStage.count({ where: { claim: { userId: arjun.id }, outcome: "RETURNED", reasonCode: "EMPLOYER_CONTRIBUTION_GAP" } });
-  const seedAssertion = { claimCount, returnedClaims: returnedCount, returnedContributionGapStages: returnedStageCount };
+  const returnedCount = await prisma.claim.count({
+    where: { userId: arjun.id, status: "RETURNED" },
+  });
+  const returnedStageCount = await prisma.claimStage.count({
+    where: {
+      claim: { userId: arjun.id },
+      outcome: "RETURNED",
+      reasonCode: "EMPLOYER_CONTRIBUTION_GAP",
+    },
+  });
+  const seedAssertion = {
+    claimCount,
+    returnedClaims: returnedCount,
+    returnedContributionGapStages: returnedStageCount,
+  };
   console.log("Seed assertion:", seedAssertion);
-  if (claimCount !== 3 || returnedCount !== 1 || returnedStageCount !== 1) throw new Error(`Seed assertion failed: expected 3 claims, 1 returned claim, 1 contribution-gap return; got ${JSON.stringify(seedAssertion)}`);
+  if (claimCount !== 3 || returnedCount !== 1 || returnedStageCount !== 1)
+    throw new Error(
+      `Seed assertion failed: expected 3 claims, 1 returned claim, 1 contribution-gap return; got ${JSON.stringify(seedAssertion)}`,
+    );
 }
 
 main()

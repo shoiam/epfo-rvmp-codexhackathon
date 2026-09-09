@@ -1,4 +1,44 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/current-user";
-export async function POST(req:Request){if(process.env.NODE_ENV==="production")return NextResponse.json({error:"Demo controls are disabled in production."},{status:403});const id=await getSessionUserId();if(!id)return NextResponse.json({error:"Please sign in."},{status:401});const {action}=await req.json();if(action==="fast-forward"){const shift=7*86400000;const user=await prisma.user.findUnique({where:{id},include:{memberships:true,claims:{include:{stages:true}}}});if(user){await prisma.$transaction([...user.memberships.filter(m=>m.exitRequestedAt).map(m=>prisma.membership.update({where:{id:m.id},data:{exitRequestedAt:new Date(m.exitRequestedAt!.getTime()-shift)}})),...user.claims.flatMap(c=>c.stages.filter(s=>!s.exitedAt).map(s=>prisma.claimStage.update({where:{id:s.id},data:{enteredAt:new Date(s.enteredAt.getTime()-shift)}})))]);}return NextResponse.json({message:"Demo moved forward 7 days."});}return NextResponse.json({message:"Reset demo data by running npx prisma db seed."});}
+export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production")
+    return NextResponse.json(
+      { error: "Demo controls are disabled in production." },
+      { status: 403 },
+    );
+  const id = await getSessionUserId();
+  if (!id) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  const { action } = await req.json();
+  if (action === "fast-forward") {
+    const shift = 7 * 86400000;
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { memberships: true, claims: { include: { stages: true } } },
+    });
+    if (user) {
+      await prisma.$transaction([
+        ...user.memberships
+          .filter((m) => m.exitRequestedAt)
+          .map((m) =>
+            prisma.membership.update({
+              where: { id: m.id },
+              data: { exitRequestedAt: new Date(m.exitRequestedAt!.getTime() - shift) },
+            }),
+          ),
+        ...user.claims.flatMap((c) =>
+          c.stages
+            .filter((s) => !s.exitedAt)
+            .map((s) =>
+              prisma.claimStage.update({
+                where: { id: s.id },
+                data: { enteredAt: new Date(s.enteredAt.getTime() - shift) },
+              }),
+            ),
+        ),
+      ]);
+    }
+    return NextResponse.json({ message: "Demo moved forward 7 days." });
+  }
+  return NextResponse.json({ message: "Reset demo data by running npx prisma db seed." });
+}

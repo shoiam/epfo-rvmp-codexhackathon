@@ -7,15 +7,431 @@ import { RETURN_REASONS } from "@/lib/return-reasons";
 import { formatDate } from "@/lib/format-date";
 import { getCumulativeDays } from "@/lib/claim-days";
 
-type Check={label:string;passed:boolean;reason:string}; type Claim={id:string;formType:string;amount:string|number;purpose:string;createdAt:string;status:string;correctionRound:number;cumulativeDays:number;stages:{id:string;seq:number;stageName:string;officerName:string|null;officerDesignation:string|null;office:string|null;enteredAt:string;exitedAt:string|null;escalatedFrom:string|null;outcome:string|null;reasonCode:string|null;reasonNote:string|null;faultParty:string|null;evidenceRef:string|null}[]};
-export default function ClaimsWorkspace({ eligibility, claims }: { eligibility: Record<string,Check[]>; claims: Claim[] }) {
- const [tab,setTab]=useState<"raise"|"track">("raise"); const [form,setForm]=useState<string|null>(null); const [step,setStep]=useState(1); const [fields,setFields]=useState<Record<string,string>>({}); const [docs,setDocs]=useState<Record<string,{filename:string;sizeBytes:number}>>({}); const [toast,setToast]=useState(""); const router=useRouter();
- const cfg=form?FORM_CONFIG[form as keyof typeof FORM_CONFIG]:null; const checks=form?eligibility[form]||[]:[]; const valid=checks.every(c=>c.passed);
- const submit=async()=>{const r=await fetch("/api/claims",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({formType:form,fields,documents:docs})});const d=await r.json();if(!r.ok){setToast(d.error||"Unable to submit");return;}setToast("Claim submitted successfully.");setForm(null);setStep(1);setFields({});setDocs({});setTab("track");router.refresh();};
- return <div className="claims-page"><div className="claims-tabs"><button className={tab==="raise"?"tab-active":""} onClick={()=>setTab("raise")}>Raise a claim</button><button className={tab==="track"?"tab-active":""} onClick={()=>setTab("track")}>Track claims</button></div>{toast&&<div className="claim-toast">{toast}<button onClick={()=>setToast("")}>×</button></div>}
- {tab==="raise"&&!form&&<section><h1>Choose a claim</h1><p className="muted">Select the request that best describes what you need.</p><div className="claim-form-grid">{FORM_TYPES.map(t=>{const c=FORM_CONFIG[t];return <button className="claim-form-card" key={t} onClick={()=>{setForm(t);setStep(1)}}><span className="radio-dot"/><h2>{c.title}</h2><p>{c.plainEnglishOneLiner}</p><small>{c.whoItsFor}</small></button>})}</div></section>}
- {tab==="raise"&&form&&cfg&&<section className="claim-wizard"><button className="back-link" onClick={()=>setForm(null)}>← Choose another claim</button><h1>{cfg.title}</h1><div className="wizard-steps"><span className={step>=1?"current":""}>1 Eligibility</span><span className={step>=2?"current":""}>2 Details</span><span className={step>=3?"current":""}>3 Documents & submit</span></div>{step===1&&<div className="wizard-panel"><p>{cfg.whoItsFor}</p>{checks.map(c=><div className={c.passed?"eligibility-pass":"eligibility-fail"} key={c.label}><b>{c.passed?"✓":"!"}</b><span>{c.label}<small>{c.passed?"Passed":c.reason}</small></span></div>)}<button className="primary-button" disabled={!valid} onClick={()=>setStep(2)}>Continue</button></div>}{step===2&&<div className="wizard-panel"><div className="claim-fields">{cfg.fields.map(f=><label key={f.key}>{f.label}{f.required&&" *"}{f.type==="select"?<select value={fields[f.key]||""} onChange={e=>setFields({...fields,[f.key]:e.target.value})}><option value="">Select</option>{f.options?.map(o=><option key={o}>{o}</option>)}</select>:<input type={f.type} value={fields[f.key]||""} onChange={e=>setFields({...fields,[f.key]:e.target.value})}/>} {f.helpText&&<small>{f.helpText}</small>}</label>)}</div><button className="primary-button" disabled={cfg.fields.some(f=>f.required&&!fields[f.key])} onClick={()=>setStep(3)}>Continue</button></div>}{step===3&&<div className="wizard-panel"><p>Upload the documents for this request. Files stay as filename and size in this demo.</p>{cfg.requiredDocs.map(d=><label className="doc-row" key={d.key}><span>{docs[d.key]?"✓":"○"}</span>{d.label}{d.required&&" *"}<input type="file" onChange={e=>{const f=e.target.files?.[0];if(f)setDocs({...docs,[d.key]:{filename:f.name,sizeBytes:f.size}})}}/>{docs[d.key]&&<small>{docs[d.key].filename}</small>}</label>)}<div className="review-box"><b>Review</b><p>{cfg.title} · ₹{Number(fields.amount||0).toLocaleString("en-IN")}</p></div><button className="primary-button" disabled={cfg.requiredDocs.some(d=>d.required&&!docs[d.key])} onClick={submit}>Submit claim</button></div>}</section>}
- {tab==="track"&&<Track claims={claims} onToast={setToast}/>}</div>;
+type Check = { label: string; passed: boolean; reason: string };
+type Claim = {
+  id: string;
+  formType: string;
+  amount: string | number;
+  purpose: string;
+  createdAt: string;
+  status: string;
+  correctionRound: number;
+  cumulativeDays: number;
+  stages: {
+    id: string;
+    seq: number;
+    stageName: string;
+    officerName: string | null;
+    officerDesignation: string | null;
+    office: string | null;
+    enteredAt: string;
+    exitedAt: string | null;
+    escalatedFrom: string | null;
+    outcome: string | null;
+    reasonCode: string | null;
+    reasonNote: string | null;
+    faultParty: string | null;
+    evidenceRef: string | null;
+  }[];
+};
+export default function ClaimsWorkspace({
+  eligibility,
+  claims,
+}: {
+  eligibility: Record<string, Check[]>;
+  claims: Claim[];
+}) {
+  const [tab, setTab] = useState<"raise" | "track">("raise");
+  const [form, setForm] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [docs, setDocs] = useState<Record<string, { filename: string; sizeBytes: number }>>({});
+  const [toast, setToast] = useState("");
+  const router = useRouter();
+  const cfg = form ? FORM_CONFIG[form as keyof typeof FORM_CONFIG] : null;
+  const checks = form ? eligibility[form] || [] : [];
+  const valid = checks.every((c) => c.passed);
+  const submit = async () => {
+    const r = await fetch("/api/claims", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ formType: form, fields, documents: docs }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      setToast(d.error || "Unable to submit");
+      return;
+    }
+    setToast("Claim submitted successfully.");
+    setForm(null);
+    setStep(1);
+    setFields({});
+    setDocs({});
+    setTab("track");
+    router.refresh();
+  };
+  return (
+    <div className="claims-page">
+      <div className="claims-tabs">
+        <button className={tab === "raise" ? "tab-active" : ""} onClick={() => setTab("raise")}>
+          Raise a claim
+        </button>
+        <button className={tab === "track" ? "tab-active" : ""} onClick={() => setTab("track")}>
+          Track claims
+        </button>
+      </div>
+      {toast && (
+        <div className="claim-toast">
+          {toast}
+          <button onClick={() => setToast("")}>×</button>
+        </div>
+      )}
+      {tab === "raise" && !form && (
+        <section>
+          <h1>Choose a claim</h1>
+          <p className="muted">Select the request that best describes what you need.</p>
+          <div className="claim-form-grid">
+            {FORM_TYPES.map((t) => {
+              const c = FORM_CONFIG[t];
+              return (
+                <button
+                  className="claim-form-card"
+                  key={t}
+                  onClick={() => {
+                    setForm(t);
+                    setStep(1);
+                  }}
+                >
+                  <span className="radio-dot" />
+                  <h2>{c.title}</h2>
+                  <p>{c.plainEnglishOneLiner}</p>
+                  <small>{c.whoItsFor}</small>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {tab === "raise" && form && cfg && (
+        <section className="claim-wizard">
+          <button className="back-link" onClick={() => setForm(null)}>
+            ← Choose another claim
+          </button>
+          <h1>{cfg.title}</h1>
+          <div className="wizard-steps">
+            <span className={step >= 1 ? "current" : ""}>1 Eligibility</span>
+            <span className={step >= 2 ? "current" : ""}>2 Details</span>
+            <span className={step >= 3 ? "current" : ""}>3 Documents & submit</span>
+          </div>
+          {step === 1 && (
+            <div className="wizard-panel">
+              <p>{cfg.whoItsFor}</p>
+              {checks.map((c) => (
+                <div className={c.passed ? "eligibility-pass" : "eligibility-fail"} key={c.label}>
+                  <b>{c.passed ? "✓" : "!"}</b>
+                  <span>
+                    {c.label}
+                    <small>{c.passed ? "Passed" : c.reason}</small>
+                  </span>
+                </div>
+              ))}
+              <button className="primary-button" disabled={!valid} onClick={() => setStep(2)}>
+                Continue
+              </button>
+            </div>
+          )}
+          {step === 2 && (
+            <div className="wizard-panel">
+              <div className="claim-fields">
+                {cfg.fields.map((f) => (
+                  <label key={f.key}>
+                    {f.label}
+                    {f.required && " *"}
+                    {f.type === "select" ? (
+                      <select
+                        value={fields[f.key] || ""}
+                        onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })}
+                      >
+                        <option value="">Select</option>
+                        {f.options?.map((o) => (
+                          <option key={o}>{o}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={f.type}
+                        value={fields[f.key] || ""}
+                        onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })}
+                      />
+                    )}{" "}
+                    {f.helpText && <small>{f.helpText}</small>}
+                  </label>
+                ))}
+              </div>
+              <button
+                className="primary-button"
+                disabled={cfg.fields.some((f) => f.required && !fields[f.key])}
+                onClick={() => setStep(3)}
+              >
+                Continue
+              </button>
+            </div>
+          )}
+          {step === 3 && (
+            <div className="wizard-panel">
+              <p>
+                Upload the documents for this request. Files stay as filename and size in this demo.
+              </p>
+              {cfg.requiredDocs.map((d) => (
+                <label className="doc-row" key={d.key}>
+                  <span>{docs[d.key] ? "✓" : "○"}</span>
+                  {d.label}
+                  {d.required && " *"}
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setDocs({ ...docs, [d.key]: { filename: f.name, sizeBytes: f.size } });
+                    }}
+                  />
+                  {docs[d.key] && <small>{docs[d.key].filename}</small>}
+                </label>
+              ))}
+              <div className="review-box">
+                <b>Review</b>
+                <p>
+                  {cfg.title} · ₹{Number(fields.amount || 0).toLocaleString("en-IN")}
+                </p>
+              </div>
+              <button
+                className="primary-button"
+                disabled={cfg.requiredDocs.some((d) => d.required && !docs[d.key])}
+                onClick={submit}
+              >
+                Submit claim
+              </button>
+            </div>
+          )}
+        </section>
+      )}
+      {tab === "track" && <Track claims={claims} onToast={setToast} />}
+    </div>
+  );
 }
-function Track({claims,onToast}:{claims:Claim[];onToast:(s:string)=>void}){const [open,setOpen]=useState<string|null>(null);const [busy,setBusy]=useState<string|null>(null);const router=useRouter();if(!claims.length)return <div className="claim-empty"><div className="claim-empty-illustration">✓</div><h1>No requests or claims</h1><p>Your submitted requests will appear here with a clear, step-by-step timeline.</p></div>;return <section><h1>Track claims</h1>{claims.map(claim=>{const current=claim.stages.find(s=>!s.exitedAt);const days=(s:{enteredAt:string;exitedAt:string|null})=>Math.max(0,Math.floor((new Date(s.exitedAt||Date.now()).getTime()-new Date(s.enteredAt).getTime())/86400000));const dayLabel=(n:number)=>`${n} ${n===1?"day":"days"}`;const ref=`CLM-${new Date(claim.createdAt).getFullYear()}-${claim.id.replace(/[^0-9]/g,"").slice(-6).padStart(6,"0")}`;const max=ESCALATION_LADDER.length;const currentIdx=current?Math.max(0,ESCALATION_LADDER.findIndex(r=>r.designation===current.officerDesignation)):0;return <article className="claim-timeline-card" key={claim.id}><div className="claim-card-header"><b>{ref}</b><span>{formatDate(claim.createdAt)}</span><span className="status-pending">{claim.status==="SETTLED"?"Settled":claim.status==="RETURNED"?"Returned":"Under process"}</span><span>Total time on this claim: {dayLabel(claim.cumulativeDays+days(current||{enteredAt:claim.createdAt,exitedAt:claim.createdAt}))}</span></div><div className="claim-summary"><b>{formatFormType(claim.formType)}</b><span>₹{Number(claim.amount).toLocaleString("en-IN")}</span><small>{claim.purpose}</small></div><div className="timeline">{claim.stages.map(s=>{const done=!!s.exitedAt;const returned=s.outcome==="RETURNED";return <div className={`timeline-node ${returned?"returned":done?"done":s===current?"current":"upcoming"}`} key={s.id}><button onClick={()=>setOpen(open===s.id?null:s.id)}><i /><span><b>{s.stageName}</b><small>{returned?`Returned · ${dayLabel(days(s))}`:done?`Done · ${dayLabel(days(s))}`:s===current?`Current · ${dayLabel(days(s))}`:"Upcoming"}</small></span></button>{open===s.id&&<div className="stage-detail">{s.officerName&&<p><b>{s.officerName}</b> · {s.officerDesignation}<br/>{s.office}</p>}</div>}{returned&&<ReturnCard stage={s} claim={claim} onToast={onToast}/>} {s===current&&currentIdx<max&&<div className="escalation-banner">{days(s)>=7?<><span>This claim has been at this desk for {dayLabel(days(s))}. EPFO&apos;s own citizens&apos; charter benchmark is 15–30 working days.</span><button disabled={busy===claim.id} onClick={async()=>{setBusy(claim.id);const r=await fetch(`/api/claims/${claim.id}/escalate`,{method:"POST"});const d=await r.json();onToast(r.ok?d.message:d.error);setBusy(null);if(r.ok)router.refresh();}}>{busy===claim.id?"Escalating…":"Escalate to next officer"}</button></>:<span>Escalate available in {dayLabel(Math.max(1,7-days(s)))}</span>}</div>}{s===current&&currentIdx>=max&&<div className="final-stage-note">This is the final approval stage.</div>}</div>})}{Array.from({length:Math.max(0,max-claim.stages.length)},(_,i)=><div className="timeline-node upcoming" key={`future-${i}`}><button><i /><span><b>{ESCALATION_LADDER[claim.stages.length+i]?.designation||"Final approval"}</b><small>Upcoming</small></span></button></div>)}</div></article>})}</section>}
-function ReturnCard({stage,claim,onToast}:{stage:Claim["stages"][number];claim:Claim;onToast:(s:string)=>void}){const reason=stage.reasonCode?RETURN_REASONS[stage.reasonCode as keyof typeof RETURN_REASONS]:null;const remedy=async()=>{const r=await fetch(`/api/claims/${claim.id}/return-action`,{method:"POST"});const d=await r.json();onToast(r.ok?d.message:d.error);};return <div className="return-card"><strong>{reason?.plainEnglish||stage.reasonNote||"This stage was returned for correction."}</strong><span className="fault-pill">{stage.faultParty==="EMPLOYER"?"Employer's action needed":stage.faultParty==="EPFO"?"EPFO data issue":"Needs your fix"}</span>{stage.faultParty==="EMPLOYER"&&<b>This is not your mistake.</b>}<div className="return-evidence"><b>Evidence</b><p>Mar 2026 · ₹43,200 missing<br/>Apr 2026 · ₹43,200 missing</p><a href="/passbook#2026-03">View in passbook</a></div><p>{reason?.whatItMeansForYou}</p><button className="return-remedy-button" onClick={remedy}>{reason?.remedy.label||"Fix and resume"}</button><small>Resumes at {reason?.resumesAtStage} with {stage.officerName||"the assigned officer"}. Typical fix: {reason?.typicalFixDays} days. Your {getCumulativeDays(claim)} days already accrued are preserved.</small>{stage.reasonNote&&<details><summary>Show the official wording</summary><p>{stage.reasonNote}</p></details>}<button className="return-challenge-button" onClick={()=>onToast("Challenge dialog opened — rebuttal capture is ready.")}>Challenge this reason</button></div>}
+function Track({ claims, onToast }: { claims: Claim[]; onToast: (s: string) => void }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const router = useRouter();
+  if (!claims.length)
+    return (
+      <div className="claim-empty">
+        <div className="claim-empty-illustration">✓</div>
+        <h1>No requests or claims</h1>
+        <p>Your submitted requests will appear here with a clear, step-by-step timeline.</p>
+      </div>
+    );
+  return (
+    <section>
+      <h1>Track claims</h1>
+      {claims.map((claim) => {
+        const current = claim.stages.find((s) => !s.exitedAt);
+        const days = (s: { enteredAt: string; exitedAt: string | null }) =>
+          Math.max(
+            0,
+            Math.floor(
+              (new Date(s.exitedAt || Date.now()).getTime() - new Date(s.enteredAt).getTime()) /
+                86400000,
+            ),
+          );
+        const dayLabel = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;
+        const ref = `CLM-${new Date(claim.createdAt).getFullYear()}-${claim.id
+          .replace(/[^0-9]/g, "")
+          .slice(-6)
+          .padStart(6, "0")}`;
+        const max = ESCALATION_LADDER.length;
+        const currentIdx = current
+          ? Math.max(
+              0,
+              ESCALATION_LADDER.findIndex((r) => r.designation === current.officerDesignation),
+            )
+          : 0;
+        return (
+          <article className="claim-timeline-card" key={claim.id}>
+            <div className="claim-card-header">
+              <b>{ref}</b>
+              <span>{formatDate(claim.createdAt)}</span>
+              <span className="status-pending">
+                {claim.status === "SETTLED"
+                  ? "Settled"
+                  : claim.status === "RETURNED"
+                    ? "Returned"
+                    : "Under process"}
+              </span>
+              <span>
+                Total time on this claim:{" "}
+                {dayLabel(
+                  claim.cumulativeDays +
+                    days(current || { enteredAt: claim.createdAt, exitedAt: claim.createdAt }),
+                )}
+              </span>
+            </div>
+            <div className="claim-summary">
+              <b>{formatFormType(claim.formType)}</b>
+              <span>₹{Number(claim.amount).toLocaleString("en-IN")}</span>
+              <small>{claim.purpose}</small>
+            </div>
+            <div className="timeline">
+              {claim.stages.map((s) => {
+                const done = !!s.exitedAt;
+                const returned = s.outcome === "RETURNED";
+                return (
+                  <div
+                    className={`timeline-node ${returned ? "returned" : done ? "done" : s === current ? "current" : "upcoming"}`}
+                    key={s.id}
+                  >
+                    <button onClick={() => setOpen(open === s.id ? null : s.id)}>
+                      <i />
+                      <span>
+                        <b>{s.stageName}</b>
+                        <small>
+                          {returned
+                            ? `Returned · ${dayLabel(days(s))}`
+                            : done
+                              ? `Done · ${dayLabel(days(s))}`
+                              : s === current
+                                ? `Current · ${dayLabel(days(s))}`
+                                : "Upcoming"}
+                        </small>
+                      </span>
+                    </button>
+                    {open === s.id && (
+                      <div className="stage-detail">
+                        {s.officerName && (
+                          <p>
+                            <b>{s.officerName}</b> · {s.officerDesignation}
+                            <br />
+                            {s.office}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {returned && <ReturnCard stage={s} claim={claim} onToast={onToast} />}{" "}
+                    {s === current && currentIdx < max && (
+                      <div className="escalation-banner">
+                        {days(s) >= 7 ? (
+                          <>
+                            <span>
+                              This claim has been at this desk for {dayLabel(days(s))}. EPFO&apos;s
+                              own citizens&apos; charter benchmark is 15–30 working days.
+                            </span>
+                            <button
+                              disabled={busy === claim.id}
+                              onClick={async () => {
+                                setBusy(claim.id);
+                                const r = await fetch(`/api/claims/${claim.id}/escalate`, {
+                                  method: "POST",
+                                });
+                                const d = await r.json();
+                                onToast(r.ok ? d.message : d.error);
+                                setBusy(null);
+                                if (r.ok) router.refresh();
+                              }}
+                            >
+                              {busy === claim.id ? "Escalating…" : "Escalate to next officer"}
+                            </button>
+                          </>
+                        ) : (
+                          <span>Escalate available in {dayLabel(Math.max(1, 7 - days(s)))}</span>
+                        )}
+                      </div>
+                    )}
+                    {s === current && currentIdx >= max && (
+                      <div className="final-stage-note">This is the final approval stage.</div>
+                    )}
+                  </div>
+                );
+              })}
+              {Array.from({ length: Math.max(0, max - claim.stages.length) }, (_, i) => (
+                <div className="timeline-node upcoming" key={`future-${i}`}>
+                  <button>
+                    <i />
+                    <span>
+                      <b>
+                        {ESCALATION_LADDER[claim.stages.length + i]?.designation ||
+                          "Final approval"}
+                      </b>
+                      <small>Upcoming</small>
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+function ReturnCard({
+  stage,
+  claim,
+  onToast,
+}: {
+  stage: Claim["stages"][number];
+  claim: Claim;
+  onToast: (s: string) => void;
+}) {
+  const reason = stage.reasonCode
+    ? RETURN_REASONS[stage.reasonCode as keyof typeof RETURN_REASONS]
+    : null;
+  const remedy = async () => {
+    const r = await fetch(`/api/claims/${claim.id}/return-action`, { method: "POST" });
+    const d = await r.json();
+    onToast(r.ok ? d.message : d.error);
+  };
+  return (
+    <div className="return-card">
+      <strong>
+        {reason?.plainEnglish || stage.reasonNote || "This stage was returned for correction."}
+      </strong>
+      <span className="fault-pill">
+        {stage.faultParty === "EMPLOYER"
+          ? "Employer's action needed"
+          : stage.faultParty === "EPFO"
+            ? "EPFO data issue"
+            : "Needs your fix"}
+      </span>
+      {stage.faultParty === "EMPLOYER" && <b>This is not your mistake.</b>}
+      <div className="return-evidence">
+        <b>Evidence</b>
+        <p>
+          Mar 2026 · ₹43,200 missing
+          <br />
+          Apr 2026 · ₹43,200 missing
+        </p>
+        <a href="/passbook#2026-03">View in passbook</a>
+      </div>
+      <p>{reason?.whatItMeansForYou}</p>
+      <button className="return-remedy-button" onClick={remedy}>
+        {reason?.remedy.label || "Fix and resume"}
+      </button>
+      <small>
+        Resumes at {reason?.resumesAtStage} with {stage.officerName || "the assigned officer"}.
+        Typical fix: {reason?.typicalFixDays} days. Your {getCumulativeDays(claim)} days already
+        accrued are preserved.
+      </small>
+      {stage.reasonNote && (
+        <details>
+          <summary>Show the official wording</summary>
+          <p>{stage.reasonNote}</p>
+        </details>
+      )}
+      <button
+        className="return-challenge-button"
+        onClick={() => onToast("Challenge dialog opened — rebuttal capture is ready.")}
+      >
+        Challenge this reason
+      </button>
+    </div>
+  );
+}

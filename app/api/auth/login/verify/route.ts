@@ -6,10 +6,19 @@ import { isValidAadhaar, normaliseAadhaar } from "@/lib/verhoeff";
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET || process.env.SESSION_SECRET === "replace-with-a-long-random-secret") {
-      return NextResponse.json({ message: "Sign in is not configured yet. Add DATABASE_URL and SESSION_SECRET in Vercel." }, { status: 503 });
+    if (
+      !process.env.DATABASE_URL ||
+      !process.env.SESSION_SECRET ||
+      process.env.SESSION_SECRET === "replace-with-a-long-random-secret"
+    ) {
+      return NextResponse.json(
+        {
+          message: "Sign in is not configured yet. Add DATABASE_URL and SESSION_SECRET in Vercel.",
+        },
+        { status: 503 },
+      );
     }
-    const { aadhaar, otp } = await request.json() as { aadhaar?: string; otp?: string };
+    const { aadhaar, otp } = (await request.json()) as { aadhaar?: string; otp?: string };
     const digits = normaliseAadhaar(aadhaar ?? "");
 
     if (!isValidAadhaar(digits) || otp !== "123456") {
@@ -18,7 +27,13 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findFirst({ where: { aadhaarLast4: digits.slice(-4) } });
     if (!user) {
-      return NextResponse.json({ message: "No member account was found. Run the demo seed against this Neon database, or register first." }, { status: 404 });
+      return NextResponse.json(
+        {
+          message:
+            "No member account was found. Run the demo seed against this Neon database, or register first.",
+        },
+        { status: 404 },
+      );
     }
 
     const response = NextResponse.json({ ok: true });
@@ -34,6 +49,12 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error("Login verification failed", error);
-    return NextResponse.json({ message: "Sign in is temporarily unavailable. Check Vercel environment variables and database connection." }, { status: 500 });
+    return NextResponse.json(
+      {
+        message:
+          "Sign in is temporarily unavailable. Check Vercel environment variables and database connection.",
+      },
+      { status: 500 },
+    );
   }
 }

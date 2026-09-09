@@ -18,7 +18,9 @@ async function sign(value: string) {
     ["sign"],
   );
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(value));
-  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 export async function createSessionToken(userId: string) {
@@ -33,7 +35,7 @@ export async function verifySessionToken(token: string | undefined) {
   const userId = token.slice(0, separator);
   const signature = token.slice(separator + 1);
   try {
-    return signature === await sign(userId) ? userId : null;
+    return signature === (await sign(userId)) ? userId : null;
   } catch {
     return null;
   }

@@ -4,12 +4,37 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Declaration = { id: string; name: string; uan: string; doj: string; declaredAt: string };
-type ExitRequest = { id: string; name: string; uan: string; doe: string | null; reason: string | null; requestedAt: string; daysRemaining: number };
+type ExitRequest = {
+  id: string;
+  name: string;
+  uan: string;
+  doe: string | null;
+  reason: string | null;
+  requestedAt: string;
+  daysRemaining: number;
+};
 
-function date(value: string | null) { return value ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value)) : "—"; }
-async function responseMessage(response: Response) { const body = await response.json().catch(() => null) as { message?: string } | null; return body?.message ?? "Unable to complete that action."; }
+function date(value: string | null) {
+  return value
+    ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "UTC" }).format(
+        new Date(value),
+      )
+    : "—";
+}
+async function responseMessage(response: Response) {
+  const body = (await response.json().catch(() => null)) as { message?: string } | null;
+  return body?.message ?? "Unable to complete that action.";
+}
 
-export function EmployerDashboard({ establishmentName, declarations, exits }: { establishmentName: string; declarations: Declaration[]; exits: ExitRequest[] }) {
+export function EmployerDashboard({
+  establishmentName,
+  declarations,
+  exits,
+}: {
+  establishmentName: string;
+  declarations: Declaration[];
+  exits: ExitRequest[];
+}) {
   const router = useRouter();
   const [tab, setTab] = useState<"declarations" | "exits">("declarations");
   const [rejectId, setRejectId] = useState<string | null>(null);
@@ -18,9 +43,213 @@ export function EmployerDashboard({ establishmentName, declarations, exits }: { 
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function action(url: string, body: object) { setBusy(true); setMessage(""); const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); setBusy(false); if (!response.ok) { setMessage(await responseMessage(response)); return; } setRejectId(null); setDisputeId(null); setReason(""); router.refresh(); }
-  async function rejectDeclaration() { if (!rejectId || !reason.trim()) { setMessage("Enter a reason before rejecting."); return; } await action(`/api/employer/declarations/${rejectId}`, { action: "reject", reason }); }
-  async function disputeExit() { if (!disputeId || !reason.trim()) { setMessage("Enter a reason before disputing."); return; } await action(`/api/employer/exits/${disputeId}`, { action: "dispute", reason }); }
+  async function action(url: string, body: object) {
+    setBusy(true);
+    setMessage("");
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setBusy(false);
+    if (!response.ok) {
+      setMessage(await responseMessage(response));
+      return;
+    }
+    setRejectId(null);
+    setDisputeId(null);
+    setReason("");
+    router.refresh();
+  }
+  async function rejectDeclaration() {
+    if (!rejectId || !reason.trim()) {
+      setMessage("Enter a reason before rejecting.");
+      return;
+    }
+    await action(`/api/employer/declarations/${rejectId}`, { action: "reject", reason });
+  }
+  async function disputeExit() {
+    if (!disputeId || !reason.trim()) {
+      setMessage("Enter a reason before disputing.");
+      return;
+    }
+    await action(`/api/employer/exits/${disputeId}`, { action: "dispute", reason });
+  }
 
-  return <main className="employer-shell"><header className="employer-header"><div><p className="employer-kicker">Employer workspace</p><h1>{establishmentName}</h1></div><form action="/api/employer/auth/logout" method="post"><button className="employer-text-button" type="submit">Sign out</button></form></header><nav className="employer-tabs" aria-label="Employer queues"><button className={tab === "declarations" ? "is-selected" : ""} type="button" onClick={() => setTab("declarations")}>Pending joint declarations <span>{declarations.length}</span></button><button className={tab === "exits" ? "is-selected" : ""} type="button" onClick={() => setTab("exits")}>Pending exit requests <span>{exits.length}</span></button></nav>{message && <p className="employer-message" role="alert">{message}</p>}{tab === "declarations" ? <section className="employer-queue"><h2>Pending joint declarations</h2>{declarations.length === 0 ? <p className="employer-empty">No joint declarations need your review.</p> : declarations.map((item) => <article className="employer-row" key={item.id}><div><h3>{item.name}</h3><p>UAN {item.uan}</p></div><dl><div><dt>Claimed DOJ</dt><dd>{date(item.doj)}</dd></div><div><dt>Declared</dt><dd>{date(item.declaredAt)}</dd></div></dl><div className="employer-row-actions"><button className="employer-button" disabled={busy} type="button" onClick={() => action(`/api/employer/declarations/${item.id}`, { action: "approve" })}>Approve</button><button className="employer-secondary-button" disabled={busy} type="button" onClick={() => { setRejectId(item.id); setDisputeId(null); setReason(""); }}>Reject</button></div>{rejectId === item.id && <div className="employer-inline-form"><label htmlFor="reject-reason">Reason for rejection</label><textarea id="reject-reason" value={reason} onChange={(event) => setReason(event.target.value)} rows={2} required /><button className="employer-secondary-button" disabled={busy} type="button" onClick={rejectDeclaration}>Confirm rejection</button></div>}</article>)}</section> : <section className="employer-queue"><h2>Pending exit requests</h2>{exits.length === 0 ? <p className="employer-empty">No pending exit requests need your review.</p> : exits.map((item) => <article className="employer-row" key={item.id}><div><h3>{item.name}</h3><p>UAN {item.uan}</p></div><dl><div><dt>Exit date</dt><dd>{date(item.doe)}</dd></div><div><dt>Reason</dt><dd>{item.reason ?? "—"}</dd></div></dl><p className="employer-countdown">Auto-accepts in {item.daysRemaining} days</p><div className="employer-row-actions"><button className="employer-button" disabled={busy} type="button" onClick={() => action(`/api/employer/exits/${item.id}`, { action: "approve" })}>Approve</button><button className="employer-secondary-button" disabled={busy} type="button" onClick={() => { setDisputeId(item.id); setRejectId(null); setReason(""); }}>Dispute</button></div>{disputeId === item.id && <div className="employer-inline-form"><label htmlFor="dispute-reason">Reason for dispute</label><textarea id="dispute-reason" value={reason} onChange={(event) => setReason(event.target.value)} rows={2} required /><button className="employer-secondary-button" disabled={busy} type="button" onClick={disputeExit}>Confirm dispute</button></div>}</article>)}</section>}</main>;
+  return (
+    <main className="employer-shell">
+      <header className="employer-header">
+        <div>
+          <p className="employer-kicker">Employer workspace</p>
+          <h1>{establishmentName}</h1>
+        </div>
+        <form action="/api/employer/auth/logout" method="post">
+          <button className="employer-text-button" type="submit">
+            Sign out
+          </button>
+        </form>
+      </header>
+      <nav className="employer-tabs" aria-label="Employer queues">
+        <button
+          className={tab === "declarations" ? "is-selected" : ""}
+          type="button"
+          onClick={() => setTab("declarations")}
+        >
+          Pending joint declarations <span>{declarations.length}</span>
+        </button>
+        <button
+          className={tab === "exits" ? "is-selected" : ""}
+          type="button"
+          onClick={() => setTab("exits")}
+        >
+          Pending exit requests <span>{exits.length}</span>
+        </button>
+      </nav>
+      {message && (
+        <p className="employer-message" role="alert">
+          {message}
+        </p>
+      )}
+      {tab === "declarations" ? (
+        <section className="employer-queue">
+          <h2>Pending joint declarations</h2>
+          {declarations.length === 0 ? (
+            <p className="employer-empty">No joint declarations need your review.</p>
+          ) : (
+            declarations.map((item) => (
+              <article className="employer-row" key={item.id}>
+                <div>
+                  <h3>{item.name}</h3>
+                  <p>UAN {item.uan}</p>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Claimed DOJ</dt>
+                    <dd>{date(item.doj)}</dd>
+                  </div>
+                  <div>
+                    <dt>Declared</dt>
+                    <dd>{date(item.declaredAt)}</dd>
+                  </div>
+                </dl>
+                <div className="employer-row-actions">
+                  <button
+                    className="employer-button"
+                    disabled={busy}
+                    type="button"
+                    onClick={() =>
+                      action(`/api/employer/declarations/${item.id}`, { action: "approve" })
+                    }
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="employer-secondary-button"
+                    disabled={busy}
+                    type="button"
+                    onClick={() => {
+                      setRejectId(item.id);
+                      setDisputeId(null);
+                      setReason("");
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+                {rejectId === item.id && (
+                  <div className="employer-inline-form">
+                    <label htmlFor="reject-reason">Reason for rejection</label>
+                    <textarea
+                      id="reject-reason"
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      rows={2}
+                      required
+                    />
+                    <button
+                      className="employer-secondary-button"
+                      disabled={busy}
+                      type="button"
+                      onClick={rejectDeclaration}
+                    >
+                      Confirm rejection
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))
+          )}
+        </section>
+      ) : (
+        <section className="employer-queue">
+          <h2>Pending exit requests</h2>
+          {exits.length === 0 ? (
+            <p className="employer-empty">No pending exit requests need your review.</p>
+          ) : (
+            exits.map((item) => (
+              <article className="employer-row" key={item.id}>
+                <div>
+                  <h3>{item.name}</h3>
+                  <p>UAN {item.uan}</p>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Exit date</dt>
+                    <dd>{date(item.doe)}</dd>
+                  </div>
+                  <div>
+                    <dt>Reason</dt>
+                    <dd>{item.reason ?? "—"}</dd>
+                  </div>
+                </dl>
+                <p className="employer-countdown">Auto-accepts in {item.daysRemaining} days</p>
+                <div className="employer-row-actions">
+                  <button
+                    className="employer-button"
+                    disabled={busy}
+                    type="button"
+                    onClick={() => action(`/api/employer/exits/${item.id}`, { action: "approve" })}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="employer-secondary-button"
+                    disabled={busy}
+                    type="button"
+                    onClick={() => {
+                      setDisputeId(item.id);
+                      setRejectId(null);
+                      setReason("");
+                    }}
+                  >
+                    Dispute
+                  </button>
+                </div>
+                {disputeId === item.id && (
+                  <div className="employer-inline-form">
+                    <label htmlFor="dispute-reason">Reason for dispute</label>
+                    <textarea
+                      id="dispute-reason"
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                      rows={2}
+                      required
+                    />
+                    <button
+                      className="employer-secondary-button"
+                      disabled={busy}
+                      type="button"
+                      onClick={disputeExit}
+                    >
+                      Confirm dispute
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))
+          )}
+        </section>
+      )}
+    </main>
+  );
 }

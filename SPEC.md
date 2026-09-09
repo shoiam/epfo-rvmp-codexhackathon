@@ -8,16 +8,16 @@ The product makes employment memberships, monthly contributions, claim progress,
 
 ## 2. Technology Stack
 
-| Area | Choice |
-| --- | --- |
-| Framework | Next.js 15 using the App Router |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Components | shadcn/ui |
-| Database ORM | Prisma |
-| Database | PostgreSQL hosted on Neon |
-| Charts | Recharts |
-| Deployment | Vercel |
+| Area           | Choice                                          |
+| -------------- | ----------------------------------------------- |
+| Framework      | Next.js 15 using the App Router                 |
+| Language       | TypeScript                                      |
+| Styling        | Tailwind CSS                                    |
+| Components     | shadcn/ui                                       |
+| Database ORM   | Prisma                                          |
+| Database       | PostgreSQL hosted on Neon                       |
+| Charts         | Recharts                                        |
+| Deployment     | Vercel                                          |
 | Authentication | A signed, `httpOnly` cookie containing `userId` |
 
 Authentication must not use NextAuth. The server verifies the signed cookie on each protected request and resolves its `userId` to the current user.
@@ -188,4 +188,3 @@ Show the member’s UAN, masked Aadhaar reference, personal details, contact det
 - Real EPFO integration or production identity verification.
 - Automated scheduled jobs for the two derived time-based rules.
 - NextAuth or other third-party authentication frameworks.
-

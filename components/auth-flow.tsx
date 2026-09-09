@@ -13,7 +13,7 @@ type Mode = "login" | "signup";
 const OTP = "123456";
 
 async function readApiMessage(response: Response, fallback: string) {
-  const result = await response.json().catch(() => null) as { message?: string } | null;
+  const result = (await response.json().catch(() => null)) as { message?: string } | null;
   return result?.message ?? fallback;
 }
 
@@ -42,7 +42,9 @@ function OtpBoxes({ value, onChange }: { value: string; onChange: (value: string
       {Array.from({ length: 6 }, (_, index) => (
         <input
           key={index}
-          ref={(element) => { refs.current[index] = element; }}
+          ref={(element) => {
+            refs.current[index] = element;
+          }}
           className="otp-box"
           inputMode="numeric"
           aria-label={`Digit ${index + 1}`}
@@ -52,7 +54,8 @@ function OtpBoxes({ value, onChange }: { value: string; onChange: (value: string
           onChange={(event) => setDigit(index, event.target.value)}
           onPaste={pasteOtp}
           onKeyDown={(event) => {
-            if (event.key === "Backspace" && !value[index] && index > 0) refs.current[index - 1]?.focus();
+            if (event.key === "Backspace" && !value[index] && index > 0)
+              refs.current[index - 1]?.focus();
           }}
         />
       ))}
@@ -127,7 +130,9 @@ export function AuthFlow({ mode }: { mode: Mode }) {
       body: JSON.stringify({ aadhaar: normaliseAadhaar(aadhaar), email, otp: emailOtp }),
     });
     if (!response.ok) {
-      setMessage(await readApiMessage(response, "We could not complete registration. Please try again."));
+      setMessage(
+        await readApiMessage(response, "We could not complete registration. Please try again."),
+      );
       return;
     }
     router.replace("/dashboard?welcome=1");
@@ -136,12 +141,16 @@ export function AuthFlow({ mode }: { mode: Mode }) {
 
   const aadhaarStep = (
     <>
-      <h1 id="auth-heading" className="auth-title">{isSignup ? "Create your member account" : "Member sign in"}</h1>
+      <h1 id="auth-heading" className="auth-title">
+        {isSignup ? "Create your member account" : "Member sign in"}
+      </h1>
       <p className="auth-copy">Verify your identity with Aadhaar to continue.</p>
       {!isSignup && <p className="auth-copy">Seeded-member demo Aadhaar: 1000 0005 4471.</p>}
       {!otpRequested ? (
         <form className="auth-form" onSubmit={requestOtp}>
-          <label className="auth-label" htmlFor="aadhaar">Aadhaar number</label>
+          <label className="auth-label" htmlFor="aadhaar">
+            Aadhaar number
+          </label>
           <input
             id="aadhaar"
             className="auth-input"
@@ -157,9 +166,13 @@ export function AuthFlow({ mode }: { mode: Mode }) {
         </form>
       ) : (
         <form className="auth-form" onSubmit={verifyAadhaarOtp}>
-          <p className="auth-copy">Enter the six-digit OTP sent to your Aadhaar-linked mobile number.</p>
+          <p className="auth-copy">
+            Enter the six-digit OTP sent to your Aadhaar-linked mobile number.
+          </p>
           <OtpBoxes value={otp} onChange={setOtp} />
-          <button className="auth-button" disabled={verifyingOtp} type="submit">{verifyingOtp ? "Verifying Aadhaar…" : "Verify Aadhaar"}</button>
+          <button className="auth-button" disabled={verifyingOtp} type="submit">
+            {verifyingOtp ? "Verifying Aadhaar…" : "Verify Aadhaar"}
+          </button>
         </form>
       )}
     </>
@@ -168,33 +181,99 @@ export function AuthFlow({ mode }: { mode: Mode }) {
   return (
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="auth-heading">
-            <div className="auth-brand"><Logo size="lg" /></div>
-        {isSignup && <ol className="auth-progress" aria-label="Registration progress"><li className={step >= 1 ? "is-current" : ""}>1. Aadhaar</li><li className={step >= 2 ? "is-current" : ""}>2. Confirm</li><li className={step >= 3 ? "is-current" : ""}>3. Email</li></ol>}
+        <div className="auth-brand">
+          <Logo size="lg" />
+        </div>
+        {isSignup && (
+          <ol className="auth-progress" aria-label="Registration progress">
+            <li className={step >= 1 ? "is-current" : ""}>1. Aadhaar</li>
+            <li className={step >= 2 ? "is-current" : ""}>2. Confirm</li>
+            <li className={step >= 3 ? "is-current" : ""}>3. Email</li>
+          </ol>
+        )}
         {step === 1 && aadhaarStep}
         {isSignup && step === 2 && (
           <section>
-            <h1 id="auth-heading" className="auth-title">Confirm your details</h1>
+            <h1 id="auth-heading" className="auth-title">
+              Confirm your details
+            </h1>
             <p className="auth-copy">These details were returned by the simulated eKYC service.</p>
-            <dl className="ekyc-details"><div><dt>Name</dt><dd>{profile.name}</dd></div><div><dt>Date of birth</dt><dd>{new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${profile.dob}T00:00:00Z`))}</dd></div><div><dt>Address</dt><dd>{profile.address}</dd></div></dl>
-            <div className="auth-actions"><button className="auth-button" type="button" onClick={() => setStep(3)}>These details are correct</button><button className="auth-link-button" type="button" onClick={() => setMessage("For this demo, mismatches are recorded for follow-up; your details are unchanged.")}>Report a mismatch</button></div>
+            <dl className="ekyc-details">
+              <div>
+                <dt>Name</dt>
+                <dd>{profile.name}</dd>
+              </div>
+              <div>
+                <dt>Date of birth</dt>
+                <dd>
+                  {new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(
+                    new Date(`${profile.dob}T00:00:00Z`),
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Address</dt>
+                <dd>{profile.address}</dd>
+              </div>
+            </dl>
+            <div className="auth-actions">
+              <button className="auth-button" type="button" onClick={() => setStep(3)}>
+                These details are correct
+              </button>
+              <button
+                className="auth-link-button"
+                type="button"
+                onClick={() =>
+                  setMessage(
+                    "For this demo, mismatches are recorded for follow-up; your details are unchanged.",
+                  )
+                }
+              >
+                Report a mismatch
+              </button>
+            </div>
           </section>
         )}
         {isSignup && step === 3 && (
           <form className="auth-form" onSubmit={completeSignup}>
-            <h1 id="auth-heading" className="auth-title">Verify your email</h1>
-            <p className="auth-copy">Enter your email and the simulated six-digit verification code.</p>
-            <label className="auth-label" htmlFor="email">Email address</label>
-            <input id="email" className="auth-input" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <h1 id="auth-heading" className="auth-title">
+              Verify your email
+            </h1>
+            <p className="auth-copy">
+              Enter your email and the simulated six-digit verification code.
+            </p>
+            <label className="auth-label" htmlFor="email">
+              Email address
+            </label>
+            <input
+              id="email"
+              className="auth-input"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
             <OtpBoxes value={emailOtp} onChange={setEmailOtp} />
-            <button className="auth-button" type="submit">Create account</button>
+            <button className="auth-button" type="submit">
+              Create account
+            </button>
           </form>
         )}
-        {message && <p className="auth-message" role="status">{message}</p>}
+        {message && (
+          <p className="auth-message" role="status">
+            {message}
+          </p>
+        )}
         <p className="auth-switch">
           {isSignup ? "Already have an account? " : "New to EPFO Reimagined? "}
-          <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create an account"}</Link>
+          <Link href={isSignup ? "/login" : "/signup"}>
+            {isSignup ? "Sign in" : "Create an account"}
+          </Link>
         </p>
-        <p className="auth-note">Simulated UIDAI flow — production requires AUA/KUA licensing or DigiLocker eKYC.</p>
+        <p className="auth-note">
+          Simulated UIDAI flow — production requires AUA/KUA licensing or DigiLocker eKYC.
+        </p>
       </section>
     </main>
   );

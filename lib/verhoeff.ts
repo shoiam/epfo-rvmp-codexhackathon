@@ -34,7 +34,13 @@ export function isValidAadhaar(value: string) {
   const digits = normaliseAadhaar(value);
   if (digits.length !== 12 || /^(\d)\1{11}$/.test(digits)) return false;
 
-  return [...digits].reverse().reduce((check, digit, index) => (
-    multiplicationTable[check][permutationTable[index % 8][Number(digit)]]
-  ), 0) === 0;
+  return (
+    [...digits]
+      .reverse()
+      .reduce(
+        (check, digit, index) =>
+          multiplicationTable[check][permutationTable[index % 8][Number(digit)]],
+        0,
+      ) === 0
+  );
 }
